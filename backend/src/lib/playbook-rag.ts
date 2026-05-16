@@ -1,7 +1,7 @@
 import { getSupabase } from './supabase.js';
 import { hasSupabase } from './env.js';
 import { MOCK_PLAYBOOKS } from '../data/mock.js';
-import type { Playbook } from '../../../shared/types/api.js';
+import type { Playbook } from '../types/api.js';
 
 export async function searchPlaybooks(query: string, limit = 5): Promise<Playbook[]> {
   const q = query.trim();

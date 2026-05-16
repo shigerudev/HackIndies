@@ -9,7 +9,7 @@ import {
   MOCK_PLAYBOOKS,
   getMockEventDetail,
 } from '../data/mock.js';
-import type { ExposureEvent, Institution, Playbook } from '../../../shared/types/api.js';
+import type { ExposureEvent, Institution, Playbook } from '../types/api.js';
 import { generateCitizenReply, mockCitizenReply, streamCitizenReply } from '../lib/citizen-chat.js';
 import { pipeUIMessageStreamToResponse } from 'ai';
 import { searchPlaybooks } from '../lib/playbook-rag.js';

@@ -7,7 +7,7 @@ import type {
   ExposureEventDetail,
   Institution,
   Playbook,
-} from '../../../shared/types/api.js';
+} from '../types/api.js';
 
 export const MOCK_INSTITUTIONS: Institution[] = [
   { id: 'b1000000-0000-4000-8000-000000000001', slug: 'digecam', name: 'DIGECAM', sector: 'defensa', country: 'GT', domain_obfuscated: 'digecam[.]gob[.]gt' },
