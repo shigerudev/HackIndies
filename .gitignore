@@ -44,3 +44,4 @@ npm-debug.log*
 
 # Generated (regenerate with npm run gen:types)
 shared/types/database.ts
+.vercel
