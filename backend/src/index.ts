@@ -1,25 +1,7 @@
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
 import { env, hasSupabase } from './lib/env.js';
-import { registerApiRoutes } from './routes/api.js';
-import { registerMakeWebhookRoutes } from './routes/webhooks-make.js';
-import { registerAgentRoutes } from './routes/agents.js';
+import { buildApp } from './app.js';
 
-const app = Fastify({ logger: true });
-
-await app.register(cors, {
-  origin: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-});
-
-await registerApiRoutes(app);
-await registerMakeWebhookRoutes(app);
-await registerAgentRoutes(app);
-
-app.setErrorHandler((err, _req, reply) => {
-  app.log.error(err);
-  reply.status(500).send({ error: 'Internal server error' });
-});
+const app = await buildApp();
 
 try {
   await app.listen({ port: env.port, host: env.host });

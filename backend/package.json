@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "gen:types": "echo 'Run: npx supabase gen types typescript --project-id YOUR_REF > ../shared/types/database.ts'",
     "test:supabase": "tsx scripts/test-supabase.ts",
     "test:minimax": "tsx scripts/test-minimax.ts",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@vercel/node": "^5.8.2",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
