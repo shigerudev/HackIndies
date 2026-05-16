@@ -24,7 +24,10 @@ export async function generateStructured<T extends z.ZodTypeAny>(params: {
       abortSignal,
     });
     return object;
-  } catch {
+  } catch (firstErr) {
+    console.warn('[structured-llm] generateObject failed, falling back to generateText+regex', {
+      error: firstErr instanceof Error ? firstErr.message : String(firstErr),
+    });
     const { text } = await generateText({
       model,
       system: `${params.system}\n\nRespondé ÚNICAMENTE con JSON válido que cumpla el schema solicitado.`,
@@ -33,7 +36,10 @@ export async function generateStructured<T extends z.ZodTypeAny>(params: {
       abortSignal,
     });
     const match = text.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Model did not return JSON');
+    if (!match) {
+      console.error('[structured-llm] generateText fallback returned no JSON', { textPreview: text.slice(0, 200) });
+      throw new Error('Model did not return JSON');
+    }
     const parsed = JSON.parse(match[0]);
     return params.schema.parse(parsed);
   }

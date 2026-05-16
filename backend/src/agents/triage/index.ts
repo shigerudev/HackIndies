@@ -101,7 +101,10 @@ ${JSON.stringify(signal, null, 2)}`,
         confidence: raw.confidence ?? 0.7,
         credentials_count_estimate: raw.credentials_count_estimate ?? 0,
       });
-    } catch {
+    } catch (err) {
+      console.error('[triage] LLM call failed, falling back to mock', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       triage = mockTriage(signal);
       mock = true;
     }
@@ -116,7 +119,7 @@ ${JSON.stringify(signal, null, 2)}`,
     latency_ms: Date.now() - started,
   });
 
-  if (input.event_id && hasSupabase()) {
+  if (input.event_id && hasSupabase() && !mock) {
     const sb = getSupabase()!;
     await sb
       .from('exposure_events')

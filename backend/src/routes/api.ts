@@ -199,8 +199,13 @@ export async function registerApiRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'messages required' });
     }
 
+    // Vercel serverless (con app.inject del handler) no soporta streaming real:
+    // reply.raw es un mock buffereado. Forzamos JSON cuando VERCEL=1.
+    // El front (CitizenChat) ya cae a JSON si no recibe chunks.
+    const isVercel = process.env.VERCEL === '1';
     const wantsStream =
-      req.query.stream === 'true' || req.headers.accept?.includes('text/event-stream');
+      !isVercel &&
+      (req.query.stream === 'true' || req.headers.accept?.includes('text/event-stream'));
 
     if (wantsStream && hasMiniMax()) {
       try {

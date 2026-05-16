@@ -174,10 +174,54 @@ paths:
           description: OK
         '404':
           description: Not found
+  /api/playbooks/search:
+    get:
+      summary: Búsqueda FTS de playbooks (RAG Fase 1)
+      operationId: searchPlaybooks
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 5
+            maximum: 20
+      responses:
+        '200':
+          description: Resultados FTS (vacío posible)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Playbook'
+                  mock:
+                    type: boolean
+                  query:
+                    type: string
+        '400':
+          description: Falta parámetro q
   /api/agent/chat:
     post:
-      summary: Chat ciudadano (SSE en Fase 1; JSON mock en Fase 0)
+      summary: Chat ciudadano. Streaming SSE solo en local; en Vercel siempre JSON.
       operationId: agentChat
+      parameters:
+        - name: stream
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['true', 'false']
+          description: |
+            `stream=true` activa SSE (UIMessage stream del AI SDK).
+            En producción (Vercel) se ignora y siempre devuelve JSON.
       requestBody:
         required: true
         content:
@@ -188,17 +232,109 @@ paths:
               properties:
                 messages:
                   type: array
+                  description: |
+                    Acepta dos formatos: ChatMessage `{role, content}` o `UIMessage` del AI SDK.
                   items:
                     type: object
-                    properties:
-                      role:
-                        type: string
-                        enum: [user, assistant]
-                      content:
-                        type: string
       responses:
         '200':
-          description: Respuesta mock (Fase 0)
+          description: |
+            JSON `{role, content, mock, provider?, model?}` cuando no hay stream;
+            o `text/event-stream` (UIMessage) si stream=true en local.
+        '502':
+          description: Falla MiniMax (solo cuando key configurada)
+  /api/agent/triage:
+    post:
+      summary: Clasifica una señal o evento y actualiza severidad (Triage agent)
+      operationId: agentTriage
+      description: |
+        Acepta `event_id` (lee el evento de Supabase y lo actualiza en modo real)
+        o `signal` (input manual). En modo mock no muta el evento.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_id:
+                  type: string
+                  format: uuid
+                signal:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    summary:
+                      type: string
+                    institution_slug:
+                      type: string
+                    source_type:
+                      type: string
+                      enum: [osint_feed, hibp, public_report, make_webhook]
+      responses:
+        '200':
+          description: Triage OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriageResponse'
+        '404':
+          description: event_id no encontrado
+        '502':
+          description: Falla del modelo
+  /api/agent/investigate:
+    post:
+      summary: Investigator agent (OSINT interno + comparación + recomendación HITL)
+      operationId: agentInvestigate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event_id]
+              properties:
+                event_id:
+                  type: string
+                  format: uuid
+                triage:
+                  type: object
+                  description: Output previo de Triage (opcional)
+      responses:
+        '200':
+          description: Investigación + recomendación HITL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestigatorResponse'
+        '404':
+          description: event_id no encontrado
+        '502':
+          description: Falla del modelo
+  /api/agent/pipeline:
+    post:
+      summary: Triage + Investigator encadenados (helper para demo)
+      operationId: agentPipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_id:
+                  type: string
+                  format: uuid
+                signal:
+                  type: object
+      responses:
+        '200':
+          description: Combinado triage + investigación
+        '400':
+          description: Provide event_id or signal
+        '404':
+          description: event_id no encontrado
 components:
   securitySchemes:
     MakeWebhookSecret:
@@ -317,3 +453,81 @@ components:
           type: array
           items:
             type: string
+    TriageOutput:
+      type: object
+      required: [institution_slug, severity, suggested_title, suggested_summary, confidence, reasoning_brief]
+      properties:
+        institution_slug:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        suggested_title:
+          type: string
+        suggested_summary:
+          type: string
+        malware_family:
+          type: string
+          nullable: true
+        credentials_count_estimate:
+          type: integer
+          minimum: 0
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        reasoning_brief:
+          type: string
+    TriageResponse:
+      type: object
+      properties:
+        triage:
+          $ref: '#/components/schemas/TriageOutput'
+        mock:
+          type: boolean
+        run_id:
+          type: string
+        event_id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+    InvestigatorOutput:
+      type: object
+      required: [label, confidence, sources_summary, recommendation, reasoning_brief, hitl_required]
+      properties:
+        label:
+          type: string
+          enum: [confirmed, strong_evidence, claimed]
+        confidence:
+          type: number
+        sources_summary:
+          type: array
+          items:
+            type: object
+            properties:
+              source_type:
+                type: string
+              note:
+                type: string
+        recommendation:
+          type: string
+          enum: [approve_for_review, needs_more_info, reject]
+        reasoning_brief:
+          type: string
+        hitl_required:
+          type: boolean
+    InvestigatorResponse:
+      type: object
+      properties:
+        investigation:
+          $ref: '#/components/schemas/InvestigatorOutput'
+        mock:
+          type: boolean
+        run_id:
+          type: string
+        hitl_status:
+          type: string
+          enum: [pending_review]
+        provider:
+          type: string

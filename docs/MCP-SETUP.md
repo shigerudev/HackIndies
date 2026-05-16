@@ -7,7 +7,6 @@
 | **vercel** | OAuth (login en Cursor) | Sí | Settings → MCP → `vercel` → *Needs login* → autorizar |
 | **v0** | `V0_API_KEY` (User) | Sí | Misma pantalla → `v0` en verde |
 | **supabase** | `SUPABASE_ACCESS_TOKEN` (User) | Sí | Misma pantalla → `supabase` en verde |
-| **n8n-mcp** | URL remota (global) | `~/.cursor/mcp.json` | Ya activo si aparece en MCP |
 
 PowerShell (nueva ventana):
 
@@ -18,7 +17,8 @@ PowerShell (nueva ventana):
 
 Si alguna sale vacía, configurarla y **reiniciar Cursor** otra vez.
 
-**Nota:** `v0` (generación UI) y `vercel` (deploy/docs de Vercel) son **dos MCP distintos**.
+**Nota:** `v0` (generación UI) y `vercel` (deploy/docs de Vercel) son **dos MCP distintos**.  
+Make.com no tiene MCP oficial — se conecta solo por HTTP (ver `docs/MAKE-CONNECT.md` y `docs/MAKE-API.md`).
 
 ## Vercel MCP (deploy y documentación)
 

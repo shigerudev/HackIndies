@@ -72,3 +72,18 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 - **No** poner `SUPABASE_SERVICE_ROLE` ni keys MiniMax en el proyecto web.
 - El backend ya tiene CORS abierto (`origin: true`).
+
+## Limitación conocida: chat SSE en producción
+
+El handler serverless de Vercel (`backend/api/index.ts`) usa `app.inject()` de Fastify, que **bufferea** la respuesta. Por eso `POST /api/agent/chat?stream=true` no entrega tokens en vivo en prod.
+
+Solución actual: el backend detecta `process.env.VERCEL === '1'` y **fuerza JSON** (no SSE). El componente `web/src/components/CitizenChat.tsx` ya tiene fallback: si el stream no produce chunks, vuelve a llamar sin `?stream=true` y muestra la respuesta completa.
+
+Lo que verá el frontend dev en prod:
+- Network: 1 request POST a `/api/agent/chat` (sin querystring), respuesta JSON.
+- UX: respuesta completa de golpe (sin typing), pero funcional.
+
+Para SSE real en prod, opciones (Fase 3):
+- Migrar `/api/agent/chat` a Vercel Edge Runtime (`runtime: 'edge'`) con `streamText().toTextStreamResponse()`.
+- Mover solo el chat a un endpoint Next.js dentro de `web/` con `runtime: 'edge'`.
+- Usar otro provider (Cloudflare Workers, Fly) para el chat.

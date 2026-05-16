@@ -20,18 +20,57 @@ async function fetchJson(url: string, init?: RequestInit) {
   return { res, body };
 }
 
+function assert(cond: unknown, msg: string) {
+  if (!cond) {
+    console.error('FAIL:', msg);
+    process.exit(1);
+  }
+}
+
 async function main() {
-  console.log(`--- NOMAD Centinela — Agents test (${API}) ---\n`);
+  console.log(`--- NOMAD Centinela — Agents + API smoke (${API}) ---\n`);
+
+  const { res: healthRes, body: health } = await fetchJson(`${API}/api/health`);
+  assert(healthRes.ok, `health status ${healthRes.status}`);
+  console.log('Health OK:', JSON.stringify(health));
+  assert(health.supabase === true || health.mock === true, 'health debe reportar supabase o mock');
+
+  const { res: instRes, body: inst } = await fetchJson(`${API}/api/institutions`);
+  assert(instRes.ok, `institutions status ${instRes.status}`);
+  console.log('Institutions OK:', inst.data?.length ?? 0);
+  assert((inst.data?.length ?? 0) >= 8, 'institutions debe tener >= 8');
+
+  const { res: evRes, body: events } = await fetchJson(
+    `${API}/api/events?status=pending_review`,
+  );
+  assert(evRes.ok, `events status ${evRes.status}`);
+  console.log('Events pending_review:', events.data?.length ?? 0);
+  assert((events.data?.length ?? 0) >= 1, 'esperaba >=1 evento pending_review en seed');
+
+  const { res: cChit, body: cHit } = await fetchJson(`${API}/api/citizen/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hash_prefix: 'a1b2c' }),
+  });
+  assert(cChit.ok, `citizen/check a1b2c status ${cChit.status}`);
+  console.log('Citizen check (a1b2c):', cHit.exposed, `(${cHit.events?.length ?? 0} evt)`);
+  assert(cHit.exposed === true, 'a1b2c debe estar expuesto en el seed');
+
+  const { res: cCmiss, body: cMiss } = await fetchJson(`${API}/api/citizen/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hash_prefix: 'zzzzz' }),
+  });
+  assert(cCmiss.ok, `citizen/check zzzzz status ${cCmiss.status}`);
+  console.log('Citizen check (zzzzz):', cMiss.exposed);
+  assert(cMiss.exposed === false, 'zzzzz no debe estar expuesto');
 
   const { res: triageRes, body: triage } = await fetchJson(`${API}/api/agent/triage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event_id: EVENT_ID }),
   });
-  if (!triageRes.ok) {
-    console.error('Triage FAIL', triage);
-    process.exit(1);
-  }
+  assert(triageRes.ok, `triage status ${triageRes.status}`);
   console.log('Triage OK:', triage.triage?.severity, triage.mock ? '(mock)' : '(minimax)');
 
   const { res: invRes, body: inv } = await fetchJson(`${API}/api/agent/investigate`, {
@@ -39,17 +78,17 @@ async function main() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event_id: EVENT_ID, triage: triage.triage }),
   });
-  if (!invRes.ok) {
-    console.error('Investigator FAIL', inv);
-    process.exit(1);
-  }
+  assert(invRes.ok, `investigate status ${invRes.status}`);
   console.log('Investigator OK:', inv.investigation?.label, inv.investigation?.recommendation);
 
-  const ragRes = await fetch(`${API}/api/playbooks/search?q=infostealer`);
-  const rag = await ragRes.json();
-  console.log('RAG playbooks:', rag.data?.length ?? 0, 'results');
+  const { res: ragRes, body: rag } = await fetchJson(
+    `${API}/api/playbooks/search?q=infostealer`,
+  );
+  assert(ragRes.ok, `playbooks/search status ${ragRes.status}`);
+  console.log('RAG playbooks:', rag.data?.length ?? 0);
+  assert((rag.data?.length ?? 0) >= 1, 'esperaba >=1 playbook para infostealer');
 
-  console.log('\nOK: agents pipeline');
+  console.log('\nOK: full smoke pipeline');
   process.exit(0);
 }
 

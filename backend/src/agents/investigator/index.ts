@@ -91,7 +91,10 @@ ${JSON.stringify(osint_context, null, 2)}
 compareSources:
 ${JSON.stringify(compare, null, 2)}`,
       });
-    } catch {
+    } catch (err) {
+      console.error('[investigator] LLM call failed, falling back to mock', {
+        error: err instanceof Error ? err.message : String(err),
+      });
       investigation = mockInvestigate(institutionSlug);
       mock = true;
     }
@@ -110,12 +113,22 @@ ${JSON.stringify(compare, null, 2)}`,
     const sb = getSupabase()!;
     const { data: inst } = await sb.from('institutions').select('id').eq('slug', institutionSlug).single();
     if (inst) {
-      await sb.from('breach_status').insert({
-        institution_id: inst.id,
-        event_id: input.event_id,
-        label: investigation.label,
-        notes: investigation.reasoning_brief,
-      });
+      const { data: existing } = await sb
+        .from('breach_status')
+        .select('id')
+        .eq('event_id', input.event_id)
+        .eq('institution_id', inst.id)
+        .maybeSingle();
+      const patch = { label: investigation.label, notes: investigation.reasoning_brief };
+      if (existing) {
+        await sb.from('breach_status').update(patch).eq('id', existing.id);
+      } else {
+        await sb.from('breach_status').insert({
+          institution_id: inst.id,
+          event_id: input.event_id,
+          ...patch,
+        });
+      }
     }
   }
 

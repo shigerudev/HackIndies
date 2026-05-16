@@ -13,6 +13,8 @@
     "test:make": "tsx scripts/test-make.ts",
     "test:agents": "tsx scripts/test-agents.ts",
     "test:agents:prod": "tsx scripts/test-agents.ts --prod",
+    "make:create": "tsx scripts/make-create-scenario.ts",
+    "make:create:notify": "tsx scripts/make-create-scenario.ts -- --notify",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
