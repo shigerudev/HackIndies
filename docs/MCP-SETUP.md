@@ -1,5 +1,36 @@
 # Configuración MCP — Cursor
 
+## Checklist rápido (post-reinicio)
+
+| Servidor | Variable / auth | ¿En `.cursor/mcp.json`? | Cómo verificar |
+|----------|-----------------|-------------------------|----------------|
+| **vercel** | OAuth (login en Cursor) | Sí | Settings → MCP → `vercel` → *Needs login* → autorizar |
+| **v0** | `V0_API_KEY` (User) | Sí | Misma pantalla → `v0` en verde |
+| **supabase** | `SUPABASE_ACCESS_TOKEN` (User) | Sí | Misma pantalla → `supabase` en verde |
+| **n8n-mcp** | URL remota (global) | `~/.cursor/mcp.json` | Ya activo si aparece en MCP |
+
+PowerShell (nueva ventana):
+
+```powershell
+[System.Environment]::GetEnvironmentVariable('V0_API_KEY', 'User')
+[System.Environment]::GetEnvironmentVariable('SUPABASE_ACCESS_TOKEN', 'User')
+```
+
+Si alguna sale vacía, configurarla y **reiniciar Cursor** otra vez.
+
+**Nota:** `v0` (generación UI) y `vercel` (deploy/docs de Vercel) son **dos MCP distintos**.
+
+## Vercel MCP (deploy y documentación)
+
+OAuth — no usa variable de entorno.
+
+1. [`.cursor/mcp.json`](../.cursor/mcp.json) incluye `"vercel": { "url": "https://mcp.vercel.com" }`.
+2. Reiniciar Cursor si acabas de reinstalar.
+3. **Settings → MCP** → servidor `vercel` → clic en **Needs login** → iniciar sesión en Vercel.
+4. Probar en Composer: *“Lista mis proyectos en Vercel”* o *“Busca en la documentación de Vercel cómo configurar env vars”*.
+
+Instalación alternativa: `npx add-mcp https://mcp.vercel.com -y`
+
 ## Supabase MCP
 
 1. Crear Personal Access Token: https://supabase.com/dashboard/account/tokens

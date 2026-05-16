@@ -10,7 +10,10 @@ import {
   getMockEventDetail,
 } from '../data/mock.js';
 import type { ExposureEvent, Institution, Playbook } from '../../../shared/types/api.js';
-import { generateCitizenReply, mockCitizenReply } from '../lib/citizen-chat.js';
+import { generateCitizenReply, mockCitizenReply, streamCitizenReply } from '../lib/citizen-chat.js';
+import { pipeUIMessageStreamToResponse } from 'ai';
+import { searchPlaybooks } from '../lib/playbook-rag.js';
+import { normalizeChatMessages } from '../lib/chat-messages.js';
 import { hasMiniMax, hasMakeWebhook, hasMakeApi } from '../lib/env.js';
 
 function useMock(): boolean {
@@ -182,17 +185,47 @@ export async function registerApiRoutes(app: FastifyInstance) {
   });
 
   const chatSchema = z.object({
-    messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })),
+    messages: z.array(z.record(z.unknown())),
   });
 
-  app.post('/api/agent/chat', async (req, reply) => {
+  app.post<{ Querystring: { stream?: string } }>('/api/agent/chat', async (req, reply) => {
     const parsed = chatSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.flatten() });
     }
 
+    const messages = await normalizeChatMessages(parsed.data.messages);
+    if (!messages.length) {
+      return reply.status(400).send({ error: 'messages required' });
+    }
+
+    const wantsStream =
+      req.query.stream === 'true' || req.headers.accept?.includes('text/event-stream');
+
+    if (wantsStream && hasMiniMax()) {
+      try {
+        const result = streamCitizenReply(messages);
+        reply.hijack();
+        pipeUIMessageStreamToResponse({
+          response: reply.raw,
+          stream: result.toUIMessageStream(),
+          headers: {
+            'X-Nomad-Mock': 'false',
+            'X-Nomad-Provider': 'minimax',
+          },
+        });
+        return;
+      } catch (err) {
+        req.log.error(err, 'MiniMax stream failed');
+        return reply.status(502).send({
+          error: 'MiniMax stream failed',
+          message: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    }
+
     try {
-      const { content, mock } = await generateCitizenReply(parsed.data.messages);
+      const { content, mock } = await generateCitizenReply(messages);
       return {
         role: 'assistant' as const,
         content,
@@ -209,12 +242,22 @@ export async function registerApiRoutes(app: FastifyInstance) {
           hint: 'Verifica MINIMAX_API_KEY y MINIMAX_BASE_URL en backend/.env',
         });
       }
-      const lastUser = [...parsed.data.messages].reverse().find((m) => m.role === 'user');
+      const lastUser = [...messages].reverse().find((m) => m.role === 'user');
       return {
         role: 'assistant' as const,
         content: mockCitizenReply(lastUser?.content ?? ''),
         mock: true,
       };
     }
+  });
+
+  app.get<{ Querystring: { q: string; limit?: string } }>('/api/playbooks/search', async (req, reply) => {
+    const q = req.query.q?.trim();
+    if (!q) {
+      return reply.status(400).send({ error: 'Query parameter q is required' });
+    }
+    const limit = Math.min(Number(req.query.limit ?? 5) || 5, 20);
+    const data = await searchPlaybooks(q, limit);
+    return { data, mock: useMock(), query: q };
   });
 }

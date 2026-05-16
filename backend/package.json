@@ -11,6 +11,7 @@
     "test:supabase": "tsx scripts/test-supabase.ts",
     "test:minimax": "tsx scripts/test-minimax.ts",
     "test:make": "tsx scripts/test-make.ts",
+    "test:agents": "tsx scripts/test-agents.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

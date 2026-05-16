@@ -1,4 +1,4 @@
-import { generateText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { CITIZEN_SYSTEM_PROMPT } from '../agents/citizen/prompt.js';
 import { hasMiniMax } from './env.js';
 import { getMinimaxModel } from './minimax.js';
@@ -31,4 +31,17 @@ export async function generateCitizenReply(messages: ChatMessage[]): Promise<{ c
   });
 
   return { content: text, mock: false };
+}
+
+export function streamCitizenReply(messages: ChatMessage[]): ReturnType<typeof streamText> {
+  if (!hasMiniMax()) {
+    throw new Error('MiniMax not configured');
+  }
+  return streamText({
+    model: getMinimaxModel(),
+    system: CITIZEN_SYSTEM_PROMPT,
+    messages,
+    maxOutputTokens: 1024,
+    temperature: 0.7,
+  });
 }

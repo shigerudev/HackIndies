@@ -42,8 +42,12 @@ const MOCK_EVENT_DETAILS: Record<string, ExposureEventDetail> = {
 };
 
 export const MOCK_PLAYBOOKS: Record<string, Playbook> = {
-  'rotate-credentials': { slug: 'rotate-credentials', title_es: 'Rotación masiva de credenciales tras infostealer', body_md: '## Pasos\n1. Identificar cuentas expuestas.\n2. Forzar reset.\n3. MFA.', effort_hours: 6, cost_estimate_usd: 0, tags: ['infostealer'] },
-  'enable-2fa': { slug: 'enable-2fa', title_es: 'Habilitar 2FA', body_md: 'Proxy SAML/OIDC o TOTP.', effort_hours: 3, cost_estimate_usd: 0, tags: ['mfa'] },
+  'rotate-credentials': { slug: 'rotate-credentials', title_es: 'Rotación masiva de credenciales tras infostealer', body_md: '## Pasos\n1. Identificar cuentas expuestas.\n2. Forzar reset.\n3. MFA.', effort_hours: 6, cost_estimate_usd: 0, tags: ['infostealer', 'credentials'] },
+  'enable-2fa': { slug: 'enable-2fa', title_es: 'Habilitar 2FA en aplicaciones legacy', body_md: 'Proxy SAML/OIDC o TOTP.', effort_hours: 3, cost_estimate_usd: 0, tags: ['mfa', 'hardening'] },
+  'csp-headers': { slug: 'csp-headers', title_es: 'Implementar CSP y headers de seguridad', body_md: 'Content-Security-Policy y HSTS.', effort_hours: 1, cost_estimate_usd: 0, tags: ['headers', 'web'] },
+  'api-rate-limit': { slug: 'api-rate-limit', title_es: 'Rate limiting en APIs públicas', body_md: 'Limitar por IP y API key.', effort_hours: 2, cost_estimate_usd: 0, tags: ['api', 'waf'] },
+  'incident-comms': { slug: 'incident-comms', title_es: 'Comunicación de incidente a ciudadanos', body_md: 'Plantilla de comunicación sin PII.', effort_hours: 2, cost_estimate_usd: 0, tags: ['comms', 'legal'] },
+  'stealer-response': { slug: 'stealer-response', title_es: 'Respuesta a compromiso por infostealer', body_md: 'Checklist 24h endpoint.', effort_hours: 4, cost_estimate_usd: 500, tags: ['endpoint', 'malware'] },
 };
 
 /** Prefijos de hash de prueba (seed) */
