@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "NOMAD Centinela — alerta temprana Def/Acc LATAM",
+  "dependencies": {
+    "next": "^15.2.4"
+  },
   "scripts": {
     "dev:backend": "npm run dev --prefix backend",
     "dev:web": "npm run dev --prefix web",
