@@ -1,0 +1,154 @@
+[
+  {
+    "id": "eval-001",
+    "description": "DIGECAM breach confirmed - critical severity",
+    "signal": {
+      "title": "Brecha crítica en DIGECAM - credenciales de empleados en mercados clandestinos",
+      "summary": "Investigación de Vector Crítico confirma que credenciales de la Dirección General de Gestión del Catastro Nacional fueron encontradas en markets de credenciales. Aproximadamente 21,700 registros únicos.",
+      "institution_slug": "digecam",
+      "source_type": "public_report"
+    },
+    "expected": {
+      "severity": "critical",
+      "institution_slug": "digecam",
+      "hitl_required": true,
+      "credentials_count_estimate_min": 10000
+    }
+  },
+  {
+    "id": "eval-002",
+    "description": "MINTRAB job portal breach - medium severity",
+    "signal": {
+      "title": "泄露 en portal del Ministerio de Trabajo",
+      "summary": "Empleadores reportan recibir correos de restablecimiento de contraseña desde cuentas relacionadas con el dominio mintrab.gob.gt. Posible compromiso de credentials deempleadores.",
+      "institution_slug": "mintrab",
+      "source_type": "osint_feed"
+    },
+    "expected": {
+      "severity": "medium",
+      "institution_slug": "mintrab",
+      "hitl_required": true
+    }
+  },
+  {
+    "id": "eval-003",
+    "description": "MSPAS health ministry - critical patient data",
+    "signal": {
+      "title": "Alerta MSPAS: potencial exposición de datos de pacientes",
+      "summary": "Equipo de seguridad del Ministerio de Salud reporta actividad anómala en sistemas de gestión de pacientes. Investigadores independientes identificaron posibles vectores de acceso no autorizado.",
+      "institution_slug": "mspas",
+      "source_type": "make_webhook"
+    },
+    "expected": {
+      "severity": "critical",
+      "institution_slug": "mspas",
+      "hitl_required": true
+    }
+  },
+  {
+    "id": "eval-004",
+    "description": "RENAP identity registry - high severity",
+    "signal": {
+      "title": "RENAP: credenciales en mercado oscuro tras actualización de sistema",
+      "summary": "Después de la actualización de mayo 2026, investigadores identificaron un lote de credenciales asociadas a renap.gob.gt en mercados especializados. El lote incluye credenciales de personal autorizado.",
+      "institution_slug": "renap",
+      "source_type": "public_report"
+    },
+    "expected": {
+      "severity": "high",
+      "institution_slug": "renap",
+      "hitl_required": true
+    }
+  },
+  {
+    "id": "eval-005",
+    "description": "MINEDUC education ministry - low severity probe",
+    "signal": {
+      "title": "MINEDUC: escaneo automatizado detectado en puerto 443",
+      "summary": "Logs de firewall del Ministerio de Educación muestran patrones de escaneo automatizado provenientes de una IP conocida por actividades de reconocimiento. Sin evidencia de exfiltración.",
+      "institution_slug": "mineduc",
+      "source_type": "osint_feed"
+    },
+    "expected": {
+      "severity": "low",
+      "institution_slug": "mineduc",
+      "hitl_required": false
+    }
+  },
+  {
+    "id": "eval-006",
+    "description": "Satellite event - unrelated institution",
+    "signal": {
+      "title": "泄露 en sistema de una empresa de telecomunicaciones regional",
+      "summary": "Proveedor de internet en Honduras reporta compromiso de credenciales de empleados. No es institución pública guatemalteca.",
+      "institution_slug": "satnet",
+      "source_type": "osint_feed"
+    },
+    "expected": {
+      "severity": "low",
+      "institution_slug": "satnet",
+      "hitl_required": false
+    }
+  },
+  {
+    "id": "eval-007",
+    "description": "Confirmed HIBP match with large volume",
+    "signal": {
+      "title": "HIBP reporta breach en base de datos corporativa gobierno GT",
+      "summary": "Have I Been Pwned incluye entrada de breach con 47,000 emails gubernamentales GT. El patrón coincide con instituciones del sector público Guatemalteco.",
+      "institution_slug": "mingob",
+      "source_type": "hibp"
+    },
+    "expected": {
+      "severity": "critical",
+      "hitl_required": true,
+      "credentials_count_estimate_min": 30000
+    }
+  },
+  {
+    "id": "eval-008",
+    "description": "Ransomware gang post - specific critical",
+    "signal": {
+      "title": "Grupo de ransomware publica muestra de credenciales de MINTRAB",
+      "summary": "Actor de amenaza Known ransomware group publicó en leak site muestra de credenciales supuestamente extraídas del Ministerio de Trabajo. La muestra contiene 340 credenciales de empleados.",
+      "institution_slug": "mintrab",
+      "source_type": "osint_feed"
+    },
+    "expected": {
+      "severity": "critical",
+      "institution_slug": "mintrab",
+      "hitl_required": true,
+      "malware_family": "ransomware"
+    }
+  },
+  {
+    "id": "eval-009",
+    "description": "Early detection - long timeframe",
+    "signal": {
+      "title": "Investigador independiente reporta credenciales GT en Shodan",
+      "summary": "Un investigador de seguridad publicó en Twitter que encontró un dataset con credenciales gubernamentales Guatemaltecas indexado en Shodan. El dataset tiene timestamps de enero 2026.",
+      "institution_slug": "mingob",
+      "source_type": "osint_feed"
+    },
+    "expected": {
+      "severity": "high",
+      "institution_slug": "mingob",
+      "hitl_required": true
+    }
+  },
+  {
+    "id": "eval-010",
+    "description": "False positive - security research noise",
+    "signal": {
+      "title": "Scanner masivo detecta configuraciones expuestas en múltiples sitios",
+      "summary": "Herramienta de escaneo masivo reporta configuraciones expuestas en sitios gubernamentales GT. El investigador determina que son falsos positivos por uso de honeypots.",
+      "institution_slug": "satnet",
+      "source_type": "osint_feed"
+    },
+    "expected": {
+      "severity": "low",
+      "institution_slug": "satnet",
+      "hitl_required": false
+    }
+  }
+]

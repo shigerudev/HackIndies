@@ -4,13 +4,29 @@ import { runTriage } from '../agents/triage/index.js';
 import { TriageInputSchema } from '../agents/triage/schema.js';
 import { runInvestigator } from '../agents/investigator/index.js';
 import { InvestigatorInputSchema } from '../agents/investigator/schema.js';
+import { routeMessage } from '../agents/router/index.js';
+import { getDefenderBriefing } from '../agents/defender/index.js';
 import { findAgentTraces, deleteAgentTraces } from '../lib/agent-traces.js';
-import { hasSupabase } from '../lib/env.js';
+import { hasSupabase, hasMiniMax } from '../lib/env.js';
 
 const pipelineSchema = z.object({
   event_id: z.string().uuid().optional(),
   signal: TriageInputSchema.shape.signal,
   reset: z.boolean().default(false),
+});
+
+const routeSchema = z.object({
+  message: z.string().min(1),
+  history: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })).optional(),
+});
+
+const defenderSchema = z.object({
+  message: z.string().min(1),
+  context: z.object({
+    institution_slug: z.string().optional(),
+    event_id: z.string().uuid().optional(),
+    severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  }).optional(),
 });
 
 export async function registerAgentRoutes(app: FastifyInstance) {
@@ -104,6 +120,72 @@ export async function registerAgentRoutes(app: FastifyInstance) {
       const message = err instanceof Error ? err.message : 'Pipeline failed';
       if (message === 'Event not found') return reply.status(404).send({ error: message });
       return reply.status(502).send({ error: message });
+    }
+  });
+
+  // POST /api/agent/route — route incoming message to appropriate agent
+  app.post('/api/agent/route', async (req, reply) => {
+    const parsed = routeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const { message, history } = parsed.data;
+      const routing = await routeMessage(message, history);
+
+      // Forward to the target agent
+      if (routing.agent === 'defender') {
+        const briefing = await getDefenderBriefing(message);
+        return {
+          routed_to: 'defender',
+          routing,
+          briefing,
+        };
+      }
+
+      if (routing.agent === 'citizen') {
+        // Hand off to citizen chat logic — delegate to /api/agent/chat
+        const { generateCitizenReply } = await import('../lib/citizen-chat.js');
+        const { normalizeChatMessages } = await import('../lib/chat-messages.js');
+        const msgs = await normalizeChatMessages([{ role: 'user', content: message }]);
+        const { content, mock } = await generateCitizenReply(msgs);
+        return {
+          routed_to: 'citizen',
+          routing,
+          response: { role: 'assistant', content, mock },
+        };
+      }
+
+      // journalist / unknown — return classification, no action
+      return {
+        routed_to: routing.agent,
+        routing,
+        response: {
+          content: 'Tu mensaje fue clasificado como ' + routing.agent + '. '
+            + (routing.agent === 'journalist'
+              ? 'Para investigación, contactá a través de los canales oficiales de NOMAD Centinela.'
+              : 'No pudimos identificar el tipo de consulta. Probá con más contexto.'),
+        },
+      };
+    } catch (err) {
+      req.log.error(err, 'Route failed');
+      return reply.status(502).send({ error: err instanceof Error ? err.message : 'Route failed' });
+    }
+  });
+
+  // POST /api/agent/defender — direct defender briefing without routing
+  app.post('/api/agent/defender', async (req, reply) => {
+    const parsed = defenderSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const { message, context } = parsed.data;
+      const briefing = await getDefenderBriefing(message, context);
+      return { briefing, mock: !hasMiniMax() };
+    } catch (err) {
+      req.log.error(err, 'Defender briefing failed');
+      return reply.status(502).send({ error: err instanceof Error ? err.message : 'Defender briefing failed' });
     }
   });
 }

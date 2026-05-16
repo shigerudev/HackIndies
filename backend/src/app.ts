@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { registerApiRoutes } from './routes/api.js';
 import { registerMakeWebhookRoutes } from './routes/webhooks-make.js';
 import { registerAgentRoutes } from './routes/agents.js';
+import { registerHitlRoutes } from './routes/hitl.js';
 import { registerDevRoutes } from './routes/dev.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -24,6 +25,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerMakeWebhookRoutes(app);
   await registerAgentRoutes(app);
   await registerDevRoutes(app);
+  await registerHitlRoutes(app);
 
   app.setErrorHandler((err, _req, reply) => {
     app.log.error(err);

@@ -23,6 +23,20 @@ Los defensores se enteran tarde. Los ciudadanos, más tarde aún.
 
 Arquitectura de **agentes especializados** (Router, Triage, Investigator, Citizen, Defender, Narrative) — no un mega-chatbot.
 
+## Por qué no es "uno más"
+
+| | HIBP | Spycloud / Constella | Vector Crítico | CIRTs | **NOMAD Centinela** |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Open source | ✗ | ✗ | ✓ | ✗ | **✓** |
+| LATAM-first | ✗ | ✗ | ✓ | ⚠︎ | **✓** |
+| Multi-stakeholder (ciudadano + defensor + periodista) | ✗ | ✗ | ✗ | ✗ | **✓** |
+| HITL ético antes de publicar | ✗ | ⚠︎ | ✗ | ⚠︎ | **✓** |
+| Playbooks accionables con costo/hora | ✗ | ✗ | ✗ | ✗ | **✓** |
+
+HIBP te dice si tu correo está expuesto — pero no ayuda al SOC del Estado. Spycloud es cerrado y B2B. Vector Crítico cuenta la historia pero no automatiza. CIRTs son lentos y opacos.
+
+**NOMAD es la primera plataforma open-source que une los cuatro mundos en español: ciudadano + defensor + periodista, con HITL ético explícito en cada decisión publicable.**
+
 ```mermaid
 flowchart LR
   Web[Next.js] --> API[Node API]

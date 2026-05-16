@@ -78,4 +78,30 @@ export async function searchPlaybooks(q: string) {
   return res.json();
 }
 
+export async function fetchHitlPending(): Promise<{ data: ExposureEvent[]; mock: boolean }> {
+  const res = await fetch(`${API_URL}/api/hitl/pending`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+export async function approveEvent(eventId: string, reviewer: string, comment?: string) {
+  const res = await fetch(`${API_URL}/api/hitl/${eventId}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-hitl-token': process.env.NEXT_PUBLIC_HITL_TOKEN ?? '' },
+    body: JSON.stringify({ reviewer, comment }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function rejectEvent(eventId: string, reviewer: string, comment?: string) {
+  const res = await fetch(`${API_URL}/api/hitl/${eventId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-hitl-token': process.env.NEXT_PUBLIC_HITL_TOKEN ?? '' },
+    body: JSON.stringify({ reviewer, comment }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export { API_URL };
