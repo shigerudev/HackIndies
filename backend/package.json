@@ -10,6 +10,7 @@
     "gen:types": "echo 'Run: npx supabase gen types typescript --project-id YOUR_REF > ../shared/types/database.ts'",
     "test:supabase": "tsx scripts/test-supabase.ts",
     "test:minimax": "tsx scripts/test-minimax.ts",
+    "test:make": "tsx scripts/test-make.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

@@ -25,8 +25,53 @@ paths:
                     type: string
                   supabase:
                     type: boolean
+                  minimax:
+                    type: boolean
+                  make_webhook:
+                    type: boolean
+                  make_api:
+                    type: boolean
                   mock:
                     type: boolean
+  /api/webhooks/make/ingest:
+    post:
+      summary: Ingesta de señal desde Make.com (sin PII)
+      operationId: makeIngest
+      description: |
+        Requiere header `X-Nomad-Webhook-Secret` o `Authorization: Bearer <MAKE_WEBHOOK_SECRET>`.
+        Crea `exposure_events` con `source_type=make_webhook` y `status=pending_review`.
+      security:
+        - MakeWebhookSecret: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MakeIngestRequest'
+      responses:
+        '201':
+          description: Evento creado
+        '200':
+          description: Duplicado (mismo external_id)
+        '400':
+          description: Validación o PII rechazada
+        '401':
+          description: Secret inválido
+        '503':
+          description: MAKE_WEBHOOK_SECRET no configurado
+  /api/webhooks/make/health:
+    get:
+      summary: Health del webhook Make (misma autenticación)
+      operationId: makeWebhookHealth
+      security:
+        - MakeWebhookSecret: []
+      responses:
+        '200':
+          description: Configurado y autorizado
+        '401':
+          description: Secret inválido
+        '503':
+          description: No configurado
   /api/institutions:
     get:
       summary: Lista instituciones monitoreadas
@@ -155,7 +200,43 @@ paths:
         '200':
           description: Respuesta mock (Fase 0)
 components:
+  securitySchemes:
+    MakeWebhookSecret:
+      type: apiKey
+      in: header
+      name: X-Nomad-Webhook-Secret
   schemas:
+    MakeIngestRequest:
+      type: object
+      required: [institution_slug, title]
+      properties:
+        institution_slug:
+          type: string
+          description: Slug en tabla institutions (ej. digecam)
+        title:
+          type: string
+        summary:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          default: medium
+        credentials_count:
+          type: integer
+          minimum: 0
+        first_seen_at:
+          type: string
+          format: date-time
+        actor_name:
+          type: string
+        malware_family:
+          type: string
+        external_id:
+          type: string
+          description: Idempotencia — ID del módulo Make
+        metadata:
+          type: object
+          additionalProperties: true
     Institution:
       type: object
       properties:

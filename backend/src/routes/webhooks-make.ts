@@ -1,12 +1,11 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { hasMakeWebhook, env } from '../lib/env.js';
+import { hasMakeWebhook, hasSupabase, env } from '../lib/env.js';
 import {
   ingestMakeEvent,
   makeIngestSchema,
   rejectIfPii,
   MakeIngestError,
 } from '../lib/make-ingest.js';
-import { hasSupabase } from '../lib/env.js';
 
 function extractWebhookSecret(req: FastifyRequest): string | undefined {
   const header =
