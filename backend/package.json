@@ -12,6 +12,7 @@
     "test:minimax": "tsx scripts/test-minimax.ts",
     "test:make": "tsx scripts/test-make.ts",
     "test:agents": "tsx scripts/test-agents.ts",
+    "test:agents:prod": "tsx scripts/test-agents.ts --prod",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

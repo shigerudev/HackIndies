@@ -11,5 +11,29 @@ async function getApp() {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const app = await getApp();
   await app.ready();
-  app.server.emit('request', req, res);
+
+  const method = (req.method ?? 'GET').toUpperCase();
+  const url = req.url ?? '/';
+  const headers = Object.fromEntries(
+    Object.entries(req.headers).filter(([, v]) => v !== undefined),
+  ) as Record<string, string>;
+
+  let payload: string | undefined;
+  if (method !== 'GET' && method !== 'HEAD') {
+    if (typeof req.body === 'string') payload = req.body;
+    else if (req.body !== undefined) payload = JSON.stringify(req.body);
+  }
+
+  const response = await app.inject({
+    method: method as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS',
+    url,
+    headers,
+    payload,
+  });
+
+  res.statusCode = response.statusCode;
+  for (const [key, value] of Object.entries(response.headers)) {
+    if (value !== undefined) res.setHeader(key, String(value));
+  }
+  res.end(response.body);
 }

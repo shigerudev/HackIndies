@@ -4,7 +4,10 @@
  */
 import 'dotenv/config';
 
-const API = process.env.API_BASE_URL ?? 'http://127.0.0.1:3001';
+const PROD = process.argv.includes('--prod');
+const API =
+  process.env.API_BASE_URL ??
+  (PROD ? 'https://nomad-centinela-api.vercel.app' : 'http://127.0.0.1:3001');
 const EVENT_ID = 'e1000000-0000-4000-8000-000000000006'; // RENAP pending_review
 const FETCH_TIMEOUT_MS = 90_000;
 
@@ -18,7 +21,7 @@ async function fetchJson(url: string, init?: RequestInit) {
 }
 
 async function main() {
-  console.log('--- NOMAD Centinela — Agents test ---\n');
+  console.log(`--- NOMAD Centinela — Agents test (${API}) ---\n`);
 
   const { res: triageRes, body: triage } = await fetchJson(`${API}/api/agent/triage`, {
     method: 'POST',

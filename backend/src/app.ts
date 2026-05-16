@@ -12,6 +12,13 @@ export async function buildApp(): Promise<FastifyInstance> {
     methods: ['GET', 'POST', 'OPTIONS'],
   });
 
+  app.get('/', async () => ({
+    service: 'NOMAD Centinela API',
+    version: '0.1.0',
+    health: '/api/health',
+    hint: 'Usar rutas /api/* — ver shared/openapi.yaml',
+  }));
+
   await registerApiRoutes(app);
   await registerMakeWebhookRoutes(app);
   await registerAgentRoutes(app);
