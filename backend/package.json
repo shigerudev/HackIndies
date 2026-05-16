@@ -7,7 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc",
-    "gen:types": "echo 'Run: npx supabase gen types typescript --local > ../shared/types/database.ts'",
+    "gen:types": "echo 'Run: npx supabase gen types typescript --project-id YOUR_REF > ../shared/types/database.ts'",
+    "test:supabase": "tsx scripts/test-supabase.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

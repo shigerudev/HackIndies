@@ -7,6 +7,8 @@
     "dev:backend": "npm run dev --prefix backend",
     "dev:web": "npm run dev --prefix web",
     "install:all": "npm install --prefix backend && npm install --prefix web",
-    "lint:backend": "npm run lint --prefix backend"
+    "lint:backend": "npm run lint --prefix backend",
+    "db:push": "npx supabase db push",
+    "db:seed": "npx supabase db query --file supabase/seed.sql --linked"
   }
 }
