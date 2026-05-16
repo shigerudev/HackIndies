@@ -1,5 +1,5 @@
 /**
- * Crea escenario Make.com vía API REST (sin tocar UI).
+ * Crea escenarios Make.com vía API REST (sin tocar UI).
  *
  * Requiere en backend/.env:
  *   MAKE_API_TOKEN     — Personal API Token de Make (us2)
@@ -8,10 +8,13 @@
  *   MAKE_WEBHOOK_SECRET — el mismo que valida el backend
  *
  * Uso:
- *   cd backend && npm run make:create               # solo ingesta
- *   cd backend && npm run make:create -- --notify   # ingesta + HTTP notify (Discord/Slack webhook)
+ *   cd backend && npm run make:create                    # solo ingesta
+ *   cd backend && npm run make:create -- --notify         # ingesta + HTTP notify (Discord/Slack webhook)
+ *   cd backend && npm run make:create -- --email         # ingesta + email HITL (requiere GMAIL_CONNECTION_ID)
+ *   cd backend && npm run make:create -- --all           # ingesta + HTTP notify + email
  *
- * Para HITL email: requiere conexión SMTP/Gmail en Make UI (lo indica el script).
+ * Param --email puede recibir el connection ID como override:
+ *   cd backend && npm run make:create -- --email 8907259
  */
 import 'dotenv/config';
 
@@ -26,8 +29,16 @@ const BACKEND_URL =
   process.env.NOMAD_API_URL ?? 'https://nomad-centinela-api.vercel.app';
 
 const WANT_NOTIFY = process.argv.includes('--notify');
+const WANT_EMAIL = process.argv.includes('--email');
 const NOTIFY_WEBHOOK_URL =
   process.env.NOTIFY_WEBHOOK_URL ?? ''; // Discord o Slack incoming webhook URL
+
+// Gmail connection ID: lo descubrimos automáticamente o lo pasa el usuario
+function getGmailConnectionId(): number {
+  const override = process.argv.find((a) => a.startsWith('--email='));
+  if (override) return Number(override.split('=')[1]);
+  return 8907259; // default descubierto: My Gmail connection
+}
 
 function die(msg: string, extra?: unknown): never {
   console.error('FAIL:', msg);
@@ -85,6 +96,7 @@ async function createHook(teamId: number, name: string): Promise<{ id: number; u
         method: false,
         header: false,
         stringify: false,
+        headers: [], // required when method=true but we use method=false
       }),
     },
   );
@@ -255,6 +267,68 @@ function blueprintNotify(hookId: number) {
   };
 }
 
+function blueprintEmail(hookId: number, connectionId: number, toEmail: string) {
+  return {
+    name: 'NOMAD Centinela - HITL email',
+    flow: [
+      {
+        id: 1,
+        module: 'gateway:CustomWebHook',
+        version: 1,
+        parameters: { hook: hookId, maxResults: 1 },
+        mapper: {},
+        metadata: {
+          designer: { x: 0, y: 0 },
+          interface: [
+            { name: 'event_id', type: 'text' },
+            { name: 'title', type: 'text' },
+            { name: 'severity', type: 'text' },
+            { name: 'institution_name', type: 'text' },
+          ],
+        },
+      },
+      {
+        id: 2,
+        module: 'google-email:ActionSendEmail',
+        version: 1,
+        parameters: { handleErrors: true },
+        mapper: {
+          to: toEmail,
+          subject: `🔔 [NOMAD Centinela] Nuevo evento pending_review: {{1.title}} ({{1.severity}})`,
+          body: `Evento: {{1.title}}\nSeveridad: {{1.severity}}\nInstitución: {{1.institution_name}}\n\nRevisar: https://nomad-centinela-web.vercel.app/events/{{1.event_id}}`,
+          connectionId: String(connectionId),
+          replyTo: '',
+          nameFrom: 'NOMAD Centinela',
+          htmlBody: false,
+          attachments: [],
+        },
+        metadata: {
+          designer: { x: 300, y: 0 },
+          restore: { parameters: { connectionId: { label: 'My Gmail connection' } } },
+          expect: [{ name: 'connectionId', type: 'connection:email', label: 'Email connection' }],
+        },
+      },
+    ],
+    metadata: {
+      instant: false,
+      version: 1,
+      scenario: {
+        roundtrips: 1,
+        maxErrors: 3,
+        autoCommit: true,
+        autoCommitTriggerLast: true,
+        sequential: false,
+        confidential: false,
+        dataloss: false,
+        dlq: false,
+        freshVariables: false,
+      },
+      designer: { orphans: [] },
+      zone: `${ZONE}.make.com`,
+    },
+  };
+}
+
 async function createScenario(teamId: number, name: string, blueprint: Json) {
   const res = await mk<{ scenario: { id: number; name: string; hookId?: number } }>(
     `/scenarios?confirmed=true`,
@@ -293,6 +367,7 @@ async function main() {
   await activateScenario(ingestScn.id);
   console.log(`Escenario ingesta activo: id=${ingestScn.id}`);
 
+  let notifyHookUrl = '';
   if (WANT_NOTIFY) {
     console.log('\n[3/3] Creando hook + escenario de HITL notify…');
     const notifyHook = await createHook(teamId, 'NOMAD HITL notify hook');
@@ -304,18 +379,42 @@ async function main() {
     await activateScenario(notifyScn.id);
     console.log(`Escenario notify activo: id=${notifyScn.id}`);
     console.log(`URL trigger (llamar desde backend): ${notifyHook.url}`);
+    notifyHookUrl = notifyHook.url;
+  } else if (WANT_EMAIL) {
+    const gmailConnId = getGmailConnectionId();
+    const toEmail = process.env.NOTIFY_EMAIL ?? 'z648s.7bt@gmail.com';
+    console.log('\n[3/3] Creando hook + escenario de HITL email…');
+    const emailHook = await createHook(teamId, 'NOMAD HITL email hook');
+    const emailScn = await createScenario(
+      teamId,
+      'NOMAD Centinela - HITL email',
+      blueprintEmail(emailHook.id, gmailConnId, toEmail),
+    );
+    await activateScenario(emailScn.id);
+    console.log(`Escenario email activo: id=${emailScn.id}`);
+    console.log(`URL trigger (llamar desde backend): ${emailHook.url}`);
+    console.log(`Enviando a: ${toEmail} (connectionId=${gmailConnId})`);
+    notifyHookUrl = emailHook.url;
   } else {
-    console.log('\n[3/3] --notify no pasado; omito escenario HITL.');
+    console.log('\n[3/3] --notify/--email no pasado; omito escenario HITL.');
   }
 
   console.log('\nOK. Verificar en:');
   console.log(`https://${ZONE}.make.com/${teamId}/scenarios`);
   console.log(`\nProbar ingesta:`);
   console.log(`curl -X POST "${ingestHook.url}" \\`);
-  console.log(`  -H "Content-Type: application/json" \\`);
+  console.log(
+    `  -H "Content-Type: application/json" \\`,
+  );
   console.log(
     `  -d '{"institution_slug":"digecam","title":"[Sintético] desde Make API","severity":"high","external_id":"make-api-001"}'`,
   );
+  if (notifyHookUrl) {
+    console.log(`\nProbar notify:`);
+    console.log(`curl -X POST "${notifyHookUrl}" \\`);
+    console.log(`  -H "Content-Type: application/json" \\`);
+    console.log(`  -d '{"event_id":"abc","title":"test","severity":"high","institution_name":"DIGECAM"}'`);
+  }
 }
 
 main().catch((e) => {
