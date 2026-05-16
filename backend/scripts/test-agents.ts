@@ -20,24 +20,22 @@ async function fetchJson(url: string, init?: RequestInit) {
 async function main() {
   console.log('--- NOMAD Centinela — Agents test ---\n');
 
-  const triageRes = await fetch(`${API}/api/agent/triage`, {
+  const { res: triageRes, body: triage } = await fetchJson(`${API}/api/agent/triage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event_id: EVENT_ID }),
   });
-  const triage = await triageRes.json();
   if (!triageRes.ok) {
     console.error('Triage FAIL', triage);
     process.exit(1);
   }
   console.log('Triage OK:', triage.triage?.severity, triage.mock ? '(mock)' : '(minimax)');
 
-  const invRes = await fetch(`${API}/api/agent/investigate`, {
+  const { res: invRes, body: inv } = await fetchJson(`${API}/api/agent/investigate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event_id: EVENT_ID, triage: triage.triage }),
   });
-  const inv = await invRes.json();
   if (!invRes.ok) {
     console.error('Investigator FAIL', inv);
     process.exit(1);
