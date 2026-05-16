@@ -44,7 +44,10 @@ async function loadEventForInvestigation(eventId: string) {
   return data;
 }
 
-export async function runInvestigator(input: InvestigatorInput): Promise<{
+export async function runInvestigator(
+  input: InvestigatorInput,
+  existingTraces?: { run_id: string; latency_ms: number; output: Record<string, unknown> }[],
+): Promise<{
   investigation: InvestigatorOutput;
   mock: boolean;
   run_id: string;
@@ -58,6 +61,17 @@ export async function runInvestigator(input: InvestigatorInput): Promise<{
   const triage = input.triage as TriageOutput | undefined;
   const institutionSlug = triage?.institution_slug ?? event.institution_slug;
   const claim = triage?.suggested_summary ?? event.summary ?? event.title;
+
+  if (existingTraces && existingTraces.length > 0) {
+    const last = existingTraces[existingTraces.length - 1];
+    return {
+      investigation: last.output as InvestigatorOutput,
+      mock: false,
+      run_id: last.run_id,
+      hitl_status: 'pending_review',
+      osint_context: { institution_slug: institutionSlug, institution_name: institutionSlug, related_events: [], breach_labels: [], actors: [] },
+    };
+  }
 
   const tools_called: Array<{ tool: string; ms: number }> = [];
   let t0 = Date.now();

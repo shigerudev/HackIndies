@@ -4,10 +4,13 @@ import { runTriage } from '../agents/triage/index.js';
 import { TriageInputSchema } from '../agents/triage/schema.js';
 import { runInvestigator } from '../agents/investigator/index.js';
 import { InvestigatorInputSchema } from '../agents/investigator/schema.js';
+import { findAgentTraces, deleteAgentTraces } from '../lib/agent-traces.js';
+import { hasSupabase } from '../lib/env.js';
 
 const pipelineSchema = z.object({
   event_id: z.string().uuid().optional(),
   signal: TriageInputSchema.shape.signal,
+  reset: z.boolean().default(false),
 });
 
 export async function registerAgentRoutes(app: FastifyInstance) {
@@ -36,7 +39,7 @@ export async function registerAgentRoutes(app: FastifyInstance) {
       const result = await runInvestigator(parsed.data);
       return { ...result, provider: result.mock ? undefined : 'minimax' };
     } catch (err) {
-      req.log.error(err, 'Investigator failed');
+      req.log.error(err, 'Investigation failed');
       const message = err instanceof Error ? err.message : 'Investigation failed';
       if (message === 'Event not found') return reply.status(404).send({ error: message });
       return reply.status(502).send({ error: message });
@@ -51,12 +54,22 @@ export async function registerAgentRoutes(app: FastifyInstance) {
     if (!parsed.data.event_id && !parsed.data.signal) {
       return reply.status(400).send({ error: 'Provide event_id or signal' });
     }
+
+    const eventId = parsed.data.event_id;
+
+    if (parsed.data.reset && eventId && hasSupabase()) {
+      await deleteAgentTraces({ event_id: eventId });
+    }
+
     try {
-      const triageResult = await runTriage({
-        event_id: parsed.data.event_id,
-        signal: parsed.data.signal,
-      });
-      const eventId = parsed.data.event_id;
+      const existingTriageTraces = eventId
+        ? await findAgentTraces({ agent_name: 'triage', event_id: eventId })
+        : [];
+      const triageResult = await runTriage(
+        { event_id: eventId, signal: parsed.data.signal },
+        existingTriageTraces,
+      );
+
       if (!eventId) {
         return {
           triage: triageResult.triage,
@@ -64,10 +77,16 @@ export async function registerAgentRoutes(app: FastifyInstance) {
           message: 'Pipeline partial: provide event_id to run investigator',
         };
       }
-      const investigationResult = await runInvestigator({
+
+      const existingInvestigationTraces = await findAgentTraces({
+        agent_name: 'investigator',
         event_id: eventId,
-        triage: triageResult.triage,
       });
+      const investigationResult = await runInvestigator(
+        { event_id: eventId, triage: triageResult.triage },
+        existingInvestigationTraces,
+      );
+
       return {
         triage: triageResult.triage,
         investigation: investigationResult.investigation,
@@ -77,6 +96,8 @@ export async function registerAgentRoutes(app: FastifyInstance) {
           triage: triageResult.run_id,
           investigator: investigationResult.run_id,
         },
+        replay:
+          existingTriageTraces.length > 0 || existingInvestigationTraces.length > 0,
       };
     } catch (err) {
       req.log.error(err, 'Pipeline failed');

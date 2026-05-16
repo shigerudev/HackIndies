@@ -34,3 +34,30 @@ export async function saveAgentTrace(params: {
   if (error) throw error;
   return { run_id, trace_id: data?.id ?? null };
 }
+
+export async function findAgentTraces(params: {
+  agent_name: string;
+  event_id: string;
+}): Promise<{ run_id: string; latency_ms: number; output: Record<string, unknown> }[]> {
+  if (!hasSupabase()) return [];
+  const sb = getSupabase()!;
+  const { data, error } = await sb
+    .from('agent_traces')
+    .select('run_id, latency_ms, output')
+    .eq('agent_name', params.agent_name)
+    .eq('event_id', params.event_id)
+    .order('created_at', { ascending: true });
+  if (error || !data) return [];
+  return data as { run_id: string; latency_ms: number; output: Record<string, unknown> }[];
+}
+
+export async function deleteAgentTraces(params: {
+  agent_name?: string;
+  event_id: string;
+}): Promise<void> {
+  if (!hasSupabase()) return;
+  const sb = getSupabase()!;
+  let q = sb.from('agent_traces').delete().eq('event_id', params.event_id);
+  if (params.agent_name) q = q.eq('agent_name', params.agent_name);
+  await q;
+}

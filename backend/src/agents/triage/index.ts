@@ -57,6 +57,7 @@ async function listInstitutionSlugs(): Promise<string[]> {
 
 export async function runTriage(
   input: TriageInput,
+  existingTraces?: { run_id: string; latency_ms: number }[],
 ): Promise<{ triage: TriageOutput; mock: boolean; run_id: string; event_id?: string }> {
   const started = Date.now();
   let signal: { title: string; summary?: string; institution_slug?: string; source_type?: string };
@@ -74,6 +75,16 @@ export async function runTriage(
     signal = input.signal;
   } else {
     throw new Error('Provide event_id or signal');
+  }
+
+  if (existingTraces && existingTraces.length > 0) {
+    const last = existingTraces[existingTraces.length - 1] as { run_id: string; latency_ms: number; output: TriageOutput };
+    return {
+      triage: last.output,
+      mock: false,
+      run_id: last.run_id,
+      event_id: input.event_id,
+    };
   }
 
   let triage: TriageOutput;
