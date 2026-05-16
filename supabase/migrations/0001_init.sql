@@ -1,12 +1,11 @@
 -- NOMAD Centinela — schema inicial (Fase 0)
 -- Datos sintéticos únicamente en seed.sql
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 
 -- Instituciones públicas (dominios ofuscados)
 CREATE TABLE IF NOT EXISTS institutions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   sector TEXT NOT NULL,
@@ -17,7 +16,7 @@ CREATE TABLE IF NOT EXISTS institutions (
 
 -- Actores de amenaza (referencia pública, nombres de reportes OSINT)
 CREATE TABLE IF NOT EXISTS actors (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
   techniques TEXT[] NOT NULL DEFAULT '{}',
   countries TEXT[] NOT NULL DEFAULT '{}',
@@ -27,7 +26,7 @@ CREATE TABLE IF NOT EXISTS actors (
 
 -- Eventos de exposición detectados (metadatos, sin credenciales)
 CREATE TABLE IF NOT EXISTS exposure_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   institution_id UUID NOT NULL REFERENCES institutions(id) ON DELETE CASCADE,
   actor_id UUID REFERENCES actors(id) ON DELETE SET NULL,
   source_type TEXT NOT NULL CHECK (source_type IN ('osint_feed', 'hibp', 'public_report', 'make_webhook')),
@@ -48,7 +47,7 @@ CREATE INDEX idx_exposure_events_severity ON exposure_events(severity);
 
 -- Estado de brecha por institución
 CREATE TABLE IF NOT EXISTS breach_status (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   institution_id UUID NOT NULL REFERENCES institutions(id) ON DELETE CASCADE,
   event_id UUID REFERENCES exposure_events(id) ON DELETE SET NULL,
   label TEXT NOT NULL CHECK (label IN ('confirmed', 'strong_evidence', 'claimed')),
@@ -61,20 +60,20 @@ CREATE TABLE IF NOT EXISTS breach_status (
 
 -- Playbooks de remediación (RAG en Fase 1)
 CREATE TABLE IF NOT EXISTS playbooks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT NOT NULL UNIQUE,
   title_es TEXT NOT NULL,
   body_md TEXT NOT NULL,
   effort_hours NUMERIC(4,1) NOT NULL DEFAULT 1,
   cost_estimate_usd NUMERIC(8,2) NOT NULL DEFAULT 0,
   tags TEXT[] NOT NULL DEFAULT '{}',
-  embedding vector(1536),
+  embedding extensions.vector(1536),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Revisiones human-in-the-loop
 CREATE TABLE IF NOT EXISTS hitl_reviews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_id UUID NOT NULL REFERENCES exposure_events(id) ON DELETE CASCADE,
   reviewer TEXT NOT NULL,
   decision TEXT NOT NULL CHECK (decision IN ('approved', 'rejected', 'needs_more_info')),
@@ -84,7 +83,7 @@ CREATE TABLE IF NOT EXISTS hitl_reviews (
 
 -- Trazas de agentes (auditoría)
 CREATE TABLE IF NOT EXISTS agent_traces (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_name TEXT NOT NULL,
   run_id TEXT NOT NULL,
   event_id UUID REFERENCES exposure_events(id) ON DELETE SET NULL,
@@ -99,7 +98,7 @@ CREATE INDEX idx_agent_traces_event ON agent_traces(event_id);
 
 -- Alertas ciudadanas (k-anonymity: solo prefijo de hash)
 CREATE TABLE IF NOT EXISTS citizen_alerts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   hash_prefix TEXT NOT NULL,
   event_id UUID REFERENCES exposure_events(id) ON DELETE SET NULL,
   notified_at TIMESTAMPTZ,
