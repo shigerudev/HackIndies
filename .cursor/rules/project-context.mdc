@@ -1,0 +1,24 @@
+---
+description: Contexto NOMAD Centinela y track Def/Acc
+alwaysApply: true
+---
+
+# NOMAD Centinela
+
+Plataforma open-source de alerta temprana de credenciales comprometidas en instituciones públicas LATAM. Equipo: **NOMAD security** (backend, frontend, Flutter, PM).
+
+Track: [Def/Acc hack@latam](https://hack.indies.la/tracks/) — ciberseguridad defensiva, alerta temprana, resiliencia institucional.
+
+## Reglas de oro
+
+1. **No tocar lo ajeno** — cero pentest, cero escaneo activo sin autorización escrita.
+2. **No rehospedar PII** — solo confirmar exposición (k-anonymity); nunca credenciales en claro.
+3. **Lado del defensor** — si una feature puede usarse para atacar, se descarta o restringe.
+
+## Stack
+
+Node (backend) · Next.js (web) · Flutter (mobile) · Supabase · Make.com · MiniMax (Fase 2+)
+
+## Fase actual
+
+Fase 0: bootstrap. No implementar agentes reales ni Make hasta Fase 1–2. Ver `docs/PHASES.md`.

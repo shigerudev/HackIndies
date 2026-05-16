@@ -1,0 +1,207 @@
+import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
+import { hasSupabase } from '../lib/env.js';
+import { getSupabase } from '../lib/supabase.js';
+import {
+  MOCK_EVENTS,
+  MOCK_HASH_PREFIXES,
+  MOCK_INSTITUTIONS,
+  MOCK_PLAYBOOKS,
+  getMockEventDetail,
+} from '../data/mock.js';
+import type { ExposureEvent, Institution, Playbook } from '../../../shared/types/api.js';
+
+function useMock(): boolean {
+  return !hasSupabase();
+}
+
+export async function registerApiRoutes(app: FastifyInstance) {
+  app.get('/api/health', async () => ({
+    status: 'ok',
+    supabase: hasSupabase(),
+    mock: useMock(),
+    version: '0.1.0',
+  }));
+
+  app.get<{ Querystring: { status?: string; severity?: string } }>('/api/institutions', async () => {
+    if (useMock()) {
+      return { data: MOCK_INSTITUTIONS, mock: true };
+    }
+    const sb = getSupabase()!;
+    const { data, error } = await sb.from('institutions').select('*').order('name');
+    if (error) throw error;
+    return { data: data as Institution[], mock: false };
+  });
+
+  app.get<{ Querystring: { status?: string; severity?: string } }>('/api/events', async (req) => {
+    const { status, severity } = req.query;
+    if (useMock()) {
+      let list = [...MOCK_EVENTS];
+      if (status) list = list.filter((e) => e.status === status);
+      if (severity) list = list.filter((e) => e.severity === severity);
+      return { data: list, mock: true };
+    }
+    const sb = getSupabase()!;
+    let q = sb.from('v_events_detail').select('*').order('first_seen_at', { ascending: false });
+    if (status) q = q.eq('status', status);
+    if (severity) q = q.eq('severity', severity);
+    const { data, error } = await q;
+    if (error) throw error;
+    const mapped: ExposureEvent[] = (data ?? []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      summary: row.summary,
+      severity: row.severity,
+      status: row.status,
+      institution_slug: row.institution_slug,
+      institution_name: row.institution_name,
+      actor_name: row.actor_name,
+      credentials_count: row.credentials_count,
+      first_seen_at: row.first_seen_at,
+    }));
+    return { data: mapped, mock: false };
+  });
+
+  app.get<{ Params: { id: string } }>('/api/events/:id', async (req, reply) => {
+    const { id } = req.params;
+    if (useMock()) {
+      const detail = getMockEventDetail(id);
+      const event = MOCK_EVENTS.find((e) => e.id === id);
+      if (!event && !detail) return reply.status(404).send({ error: 'Not found' });
+      return {
+        data: detail ?? { ...event!, payload: {}, traces: [], hitl_reviews: [] },
+        mock: true,
+      };
+    }
+    const sb = getSupabase()!;
+    const { data: event, error } = await sb.from('v_events_detail').select('*').eq('id', id).single();
+    if (error || !event) return reply.status(404).send({ error: 'Not found' });
+    const { data: traces } = await sb.from('agent_traces').select('*').eq('event_id', id);
+    const { data: reviews } = await sb.from('hitl_reviews').select('*').eq('event_id', id);
+    return {
+      data: {
+        id: event.id,
+        title: event.title,
+        summary: event.summary,
+        severity: event.severity,
+        status: event.status,
+        institution_slug: event.institution_slug,
+        institution_name: event.institution_name,
+        actor_name: event.actor_name,
+        credentials_count: event.credentials_count,
+        first_seen_at: event.first_seen_at,
+        payload: event.payload ?? {},
+        traces: traces ?? [],
+        hitl_reviews: reviews ?? [],
+      },
+      mock: false,
+    };
+  });
+
+  const citizenSchema = z.object({
+    hash_prefix: z.string().length(5).toLowerCase(),
+  });
+
+  app.post('/api/citizen/check', async (req, reply) => {
+    const parsed = citizenSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.flatten() });
+    }
+    const { hash_prefix } = parsed.data;
+
+    if (useMock()) {
+      const eventIds = MOCK_HASH_PREFIXES[hash_prefix] ?? [];
+      const events = MOCK_EVENTS.filter((e) => eventIds.includes(e.id)).map((e) => ({
+        id: e.id,
+        title: e.title,
+        institution_name: e.institution_name,
+      }));
+      return {
+        exposed: events.length > 0,
+        events,
+        recommendations: events.length > 0
+          ? [
+              'Cambiá contraseñas de cuentas asociadas a ese correo.',
+              'Activá autenticación de dos factores (2FA).',
+              'Revisá movimientos bancarios y reportá actividad sospechosa.',
+            ]
+          : ['No encontramos tu prefijo en brechas publicadas de demo.'],
+        mock: true,
+      };
+    }
+
+    const sb = getSupabase()!;
+    const { data: alerts } = await sb
+      .from('citizen_alerts')
+      .select('event_id')
+      .eq('hash_prefix', hash_prefix);
+    if (!alerts?.length) {
+      return {
+        exposed: false,
+        events: [],
+        recommendations: ['No encontramos exposición para ese prefijo en nuestro registro.'],
+        mock: false,
+      };
+    }
+    const ids = alerts.map((a) => a.event_id).filter(Boolean);
+    const { data: events } = await sb.from('v_events_detail').select('id, title, institution_name').in('id', ids);
+    return {
+      exposed: true,
+      events: events ?? [],
+      recommendations: [
+        'Cambiá contraseñas de cuentas asociadas a ese correo.',
+        'Activá 2FA en servicios críticos.',
+        'Considerá alertas de crédito si hubo datos financieros en la brecha.',
+      ],
+      mock: false,
+    };
+  });
+
+  app.get<{ Params: { slug: string } }>('/api/playbooks/:slug', async (req, reply) => {
+    const { slug } = req.params;
+    if (useMock()) {
+      const pb = MOCK_PLAYBOOKS[slug];
+      if (!pb) return reply.status(404).send({ error: 'Not found' });
+      return { data: pb, mock: true };
+    }
+    const sb = getSupabase()!;
+    const { data, error } = await sb.from('playbooks').select('slug, title_es, body_md, effort_hours, cost_estimate_usd, tags').eq('slug', slug).single();
+    if (error || !data) return reply.status(404).send({ error: 'Not found' });
+    return {
+      data: {
+        ...data,
+        cost_estimate_usd: data.cost_estimate_usd,
+      } as Playbook,
+      mock: false,
+    };
+  });
+
+  const chatSchema = z.object({
+    messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })),
+  });
+
+  app.post('/api/agent/chat', async (req, reply) => {
+    const parsed = chatSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.flatten() });
+    }
+    const lastUser = [...parsed.data.messages].reverse().find((m) => m.role === 'user');
+    const query = lastUser?.content ?? '';
+
+    // Fase 0: respuesta mock (MiniMax en Fase 1)
+    const answer = `Soy el asistente ciudadano de NOMAD Centinela (modo demo). Recibí tu consulta sobre: "${query.slice(0, 120)}". 
+
+Recomendaciones generales:
+• Rotá contraseñas si tu correo apareció en una brecha pública.
+• Activá 2FA en banca, correo y redes sociales.
+• No compartas códigos OTP con nadie.
+
+Para verificar exposición usá POST /api/citizen/check con el prefijo SHA-1 de 5 caracteres de tu email. Prefijos de prueba: a1b2c, d4e5f, f6a7b.`;
+
+    return {
+      role: 'assistant',
+      content: answer,
+      mock: true,
+    };
+  });
+}

@@ -1,0 +1,238 @@
+openapi: 3.1.0
+info:
+  title: NOMAD Centinela API
+  version: 0.1.0
+  description: |
+    API estable para web y Flutter. Fase 0: datos desde Supabase;
+    endpoints de agente devuelven `mock: true` hasta Fase 1.
+servers:
+  - url: http://localhost:3001
+    description: Backend local
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      operationId: health
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  supabase:
+                    type: boolean
+                  mock:
+                    type: boolean
+  /api/institutions:
+    get:
+      summary: Lista instituciones monitoreadas
+      operationId: listInstitutions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Institution'
+                  mock:
+                    type: boolean
+  /api/events:
+    get:
+      summary: Lista eventos de exposición
+      operationId: listEvents
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending_review, approved, rejected, published]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExposureEvent'
+                  mock:
+                    type: boolean
+  /api/events/{id}:
+    get:
+      summary: Detalle de evento con trazas
+      operationId: getEvent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+  /api/citizen/check:
+    post:
+      summary: Verificar exposición por prefijo de hash (k-anonymity)
+      operationId: citizenCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hash_prefix]
+              properties:
+                hash_prefix:
+                  type: string
+                  minLength: 5
+                  maxLength: 5
+                  description: Primeros 5 caracteres SHA-1 del email en minúsculas
+      responses:
+        '200':
+          description: Resultado (sin PII)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitizenCheckResult'
+  /api/playbooks/{slug}:
+    get:
+      summary: Obtener playbook de remediación
+      operationId: getPlaybook
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+  /api/agent/chat:
+    post:
+      summary: Chat ciudadano (SSE en Fase 1; JSON mock en Fase 0)
+      operationId: agentChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                      content:
+                        type: string
+      responses:
+        '200':
+          description: Respuesta mock (Fase 0)
+components:
+  schemas:
+    Institution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        sector:
+          type: string
+        country:
+          type: string
+        domain_obfuscated:
+          type: string
+    ExposureEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        summary:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+        institution_slug:
+          type: string
+        institution_name:
+          type: string
+        actor_name:
+          type: string
+        credentials_count:
+          type: integer
+        first_seen_at:
+          type: string
+          format: date-time
+    CitizenCheckResult:
+      type: object
+      properties:
+        exposed:
+          type: boolean
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              institution_name:
+                type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        mock:
+          type: boolean
+    Playbook:
+      type: object
+      properties:
+        slug:
+          type: string
+        title_es:
+          type: string
+        body_md:
+          type: string
+        effort_hours:
+          type: number
+        cost_estimate_usd:
+          type: number
+        tags:
+          type: array
+          items:
+            type: string

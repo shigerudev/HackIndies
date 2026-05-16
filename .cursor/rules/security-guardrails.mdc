@@ -1,0 +1,32 @@
+---
+description: Seguridad, lethal trifecta, secrets
+alwaysApply: true
+---
+
+# Security guardrails
+
+## Secrets
+
+- Nunca commitear `.env`, `service_role`, PAT de Supabase, API keys de MiniMax/Make.
+- Solo `SUPABASE_URL` + `SUPABASE_ANON_KEY` en web/mobile si fuera imprescindible (preferir API backend).
+
+## Lethal trifecta (Simon Willison)
+
+Evitar que un agente combine: (1) datos privados, (2) contenido no confiable, (3) exfiltración externa.
+
+- **Investigator** lee OSINT pero **no** envía email/push/posts.
+- **Narrative** solo recibe JSON validado por HITL, nunca dumps crudos.
+
+## Datos
+
+- `supabase/seed.sql` = datos **sintéticos** únicamente.
+- Dominios ofuscados: `renap[.]gob[.]gt`
+- Prohibido importar dumps reales de brechas.
+
+## Tools por agente
+
+| Agente | Puede | No puede |
+|--------|-------|----------|
+| Investigator | searchOSINT, compareSources | notify, publish |
+| Citizen | getBreachStatus, getRemediation | raw credential lookup |
+| Narrative | formatTimeline, draftPost | read untrusted URLs |

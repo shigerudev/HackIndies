@@ -1,0 +1,25 @@
+---
+description: Convenciones Next.js web dashboard
+globs: web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend Next.js
+
+- Next.js 15 App Router, TypeScript estricto
+- Tailwind CSS; shadcn/ui en Fase 1+
+- **Server Components** por defecto; `'use client'` solo para interactividad
+- Consumir **solo** `NEXT_PUBLIC_API_URL` (backend), nunca Supabase service_role
+- Chat ciudadano: `useChat` + SSE hacia `POST /api/agent/chat` (Fase 1)
+- Tipos desde `shared/types/` cuando existan
+
+## Env
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+## No hacer en Fase 0
+
+- No duplicar lógica de negocio; el backend es fuente de verdad
+- No hardcodear lista de instituciones; siempre fetch al API

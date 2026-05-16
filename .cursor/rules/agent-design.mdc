@@ -1,0 +1,31 @@
+---
+description: Diseño de agentes IA (patrones Mastra)
+globs: backend/src/agents/**
+alwaysApply: false
+---
+
+# Agent design
+
+Basado en *Patterns for Building AI Agents* (Mastra).
+
+## Arquitectura
+
+- **No mega-agentes** — Router + especialistas (Triage, Investigator, Citizen, Defender, Narrative)
+- **Evolve iteratively** — Fase 0 sin LLM; Fase 1 Triage+Investigator; Fase 2 resto
+- **HITL** — Investigator y Narrative requieren aprobación humana antes de publicar
+- **Compress context** — pasar resúmenes entre agentes, no dumps completos
+- **Parallelize carefully** — Defender puede paralelizar playbooks; Investigator es secuencial
+
+## Implementación
+
+```
+backend/src/agents/
+  router/
+  triage/
+  investigator/
+  citizen/
+  defender/
+  narrative/
+```
+
+Cada agente: `index.ts`, `prompt.ts`, `schema.ts` (Zod), `tools.ts`

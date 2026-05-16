@@ -1,0 +1,21 @@
+---
+description: Migraciones Supabase, RLS, pgvector
+globs: supabase/**
+alwaysApply: false
+---
+
+# Supabase schema
+
+- Migraciones en `supabase/migrations/` numeradas (`0001_init.sql`)
+- Seed en `supabase/seed.sql` — solo datos sintéticos
+- Habilitar `vector` extension antes de tablas con embeddings
+- **RLS** en toda tabla expuesta; backend usa `service_role` solo en servidor Node
+- Migraciones idempotentes donde sea posible (`IF NOT EXISTS`)
+
+## Labels de breach_status
+
+`confirmed` | `strong_evidence` | `claimed`
+
+## k-anonymity
+
+Tabla `citizen_alerts` usa `hash_prefix` (5 chars SHA-1), nunca email en claro.

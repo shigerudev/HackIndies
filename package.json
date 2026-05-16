@@ -1,0 +1,12 @@
+{
+  "name": "nomad-centinela",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NOMAD Centinela — alerta temprana Def/Acc LATAM",
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:web": "npm run dev --prefix web",
+    "install:all": "npm install --prefix backend && npm install --prefix web",
+    "lint:backend": "npm run lint --prefix backend"
+  }
+}

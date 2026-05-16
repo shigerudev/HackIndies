@@ -1,0 +1,34 @@
+---
+description: Convenciones backend Node + Vercel AI SDK
+globs: backend/**/*.ts
+alwaysApply: false
+---
+
+# Backend Node
+
+## Stack
+
+- Fastify + TypeScript + `@supabase/supabase-js`
+- Vercel AI SDK (`ai`, `@ai-sdk/*`) para agentes (Fase 1+)
+- Zod para structured output y validación de requests
+
+## Patrones
+
+```typescript
+// Structured output
+const TriageSchema = z.object({
+  institution_slug: z.string(),
+  severity: z.enum(['low', 'medium', 'high', 'critical']),
+});
+```
+
+- Un agente = un directorio en `backend/src/agents/<name>/`
+- Tools en `backend/src/tools/` con descripción clara para el modelo
+- Model routing: MiniMax default, fallback documentado en `.env.example`
+- Errores de tools → log + contexto para retry (Feed Errors Into Context)
+
+## API
+
+- Implementar contrato `shared/openapi.yaml` v0.1
+- Respuestas mock de IA incluyen `"mock": true`
+- Puerto default: `3001` (web en `3000`)

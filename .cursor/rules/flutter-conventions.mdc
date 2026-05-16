@@ -1,0 +1,30 @@
+---
+description: Convenciones Flutter app ciudadana
+globs: mobile/**/*.dart
+alwaysApply: false
+---
+
+# Flutter mobile
+
+- Dart 3+, Material 3
+- HTTP: `dio` o `http` package
+- Estado: Provider (Fase 0) o Riverpod (Fase 1+) — no mezclar sin acuerdo
+- Modelos: alinear con `shared/openapi.yaml`; generar con openapi-generator en Fase 1
+
+## API
+
+```dart
+const apiBase = String.fromEnvironment(
+  'API_BASE',
+  defaultValue: 'http://localhost:3001',
+);
+```
+
+- Android emulator: `http://10.0.2.2:3001`
+- iOS simulator: `http://localhost:3001`
+- Nunca almacenar credenciales en claro en el dispositivo
+
+## Pantallas Fase 0
+
+- Lista de instituciones (`GET /api/institutions`)
+- Placeholder para check ciudadano (Fase 1)
