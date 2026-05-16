@@ -87,7 +87,7 @@ export default function PlaygroundPage() {
           </p>
           <div className="flex gap-4 mt-6">
             <a
-              href="https://github.com/hugow蕃/nu-cve"
+              href="https://github.com/shigerudev/HackIndies"
               className="text-sm text-slate-400 hover:text-cyan-400 transition-colors"
               target="_blank"
               rel="noopener noreferrer"
