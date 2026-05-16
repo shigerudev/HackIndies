@@ -85,7 +85,7 @@ export default function PlaygroundPage() {
           <p className="text-slate-400 leading-relaxed max-w-2xl">
             NOMAD Centinela es una plataforma open-source de ciberseguridad defensiva (Def/Acc) que monitorea fuentes OSINT públicas, detecta exposición de credenciales y notifica a los actores relevantes — sin jamás atacar, escanear ni almacenar información personal identificable. El track Def/Acc de hack@latam prioriza tecnologías que fortalecen las defensas de la sociedad contra amenazas a gran escala como ciberataques y fallas en sistemas críticos.
           </p>
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-4 mt-6 flex-wrap">
             <a
               href="https://github.com/shigerudev/HackIndies"
               className="text-sm text-slate-400 hover:text-cyan-400 transition-colors"
@@ -109,6 +109,18 @@ export default function PlaygroundPage() {
               rel="noopener noreferrer"
             >
               API health ↗
+            </a>
+            <a
+              href="/demo"
+              className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Live demo ↗
+            </a>
+            <a
+              href="/casos/digecam"
+              className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              Caso DIGECAM →
             </a>
           </div>
         </div>
@@ -678,6 +690,55 @@ const reply = messages[messages.length - 1].content;`,
           </div>
           <div className="mt-4 p-4 rounded-xl border border-slate-700 bg-slate-950 text-sm text-slate-400">
             <strong className="text-white">Datos del seed:</strong> Todos los eventos en esta plataforma son sintéticos. Los dominios están ofuscados (ej. <code>renap[.]gob[.]gt</code>). No hay datos reales de brechas. El proyecto cumple con las reglas de seguridad del workspace.
+          </div>
+        </Section>
+
+        {/* SECTION 6: COMPARISON MATRIX */}
+        <Section
+          title="Cómo nos diferenciamos"
+          description="NOMAD Centinela es la única plataforma que combina las cuatro capacidades que los defensores LATAM necesitan."
+          badge="comparativa"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700">
+                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Plataforma</th>
+                  <th className="text-center py-3 px-3 text-slate-400 font-medium">Open Source</th>
+                  <th className="text-center py-3 px-3 text-slate-400 font-medium">LATAM-first</th>
+                  <th className="text-center py-3 px-3 text-slate-400 font-medium">Multi-stakeholder</th>
+                  <th className="text-center py-3 px-3 text-slate-400 font-medium">HITL ético</th>
+                  <th className="text-center py-3 px-3 text-slate-400 font-medium">Playbooks accionables</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {[
+                  { name: 'HIBP', open: false, latam: false, multi: false, hitl: false, playbooks: false },
+                  { name: 'Spycloud / Constella', open: false, latam: false, multi: false, hitl: false, playbooks: false },
+                  { name: 'Vector Crítico', open: true, latam: true, multi: false, hitl: false, playbooks: false },
+                  { name: 'CIRTs nacionales', open: false, latam: true, multi: false, hitl: false, playbooks: false },
+                  { name: 'NOMAD Centinela', open: true, latam: true, multi: true, hitl: true, playbooks: true },
+                ].map((row) => (
+                  <tr key={row.name} className={row.name === 'NOMAD Centinela' ? 'bg-cyan-950/30' : ''}>
+                    <td className={`py-3 px-4 font-medium ${row.name === 'NOMAD Centinela' ? 'text-cyan-300' : 'text-slate-300'}`}>
+                      {row.name}
+                    </td>
+                    {(['open', 'latam', 'multi', 'hitl', 'playbooks'] as const).map((col) => (
+                      <td key={col} className="text-center py-3 px-3">
+                        {row[col] ? (
+                          <span className={row.name === 'NOMAD Centinela' ? 'text-cyan-400' : 'text-emerald-400'}>✓</span>
+                        ) : (
+                          <span className="text-slate-600">✗</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 flex gap-4 flex-wrap">
+            <span className="text-xs text-slate-500">HIBP = Have I Been Pwned (Troy Hunt) · Spycloud / Constella = comerciales USA · CIRTs = Centros de Respuesta a Incidentes gubernamentales</span>
           </div>
         </Section>
 
