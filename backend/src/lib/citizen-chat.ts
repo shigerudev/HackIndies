@@ -26,7 +26,7 @@ export async function generateCitizenReply(messages: ChatMessage[]): Promise<{ c
     model: getMinimaxModel(),
     system: CITIZEN_SYSTEM_PROMPT,
     messages,
-    maxTokens: 1024,
+    maxOutputTokens: 1024,
     temperature: 0.7,
   });
 

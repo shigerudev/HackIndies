@@ -11,7 +11,7 @@ import {
 } from '../data/mock.js';
 import type { ExposureEvent, Institution, Playbook } from '../../../shared/types/api.js';
 import { generateCitizenReply, mockCitizenReply } from '../lib/citizen-chat.js';
-import { hasMiniMax } from '../lib/env.js';
+import { hasMiniMax, hasMakeWebhook, hasMakeApi } from '../lib/env.js';
 
 function useMock(): boolean {
   return !hasSupabase();

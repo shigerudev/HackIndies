@@ -13,9 +13,10 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.64",
     "@fastify/cors": "^10.0.2",
     "@supabase/supabase-js": "^2.49.1",
-    "ai": "^4.3.16",
+    "ai": "^6.0.184",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "vercel-minimax-ai-provider": "^0.0.2",
