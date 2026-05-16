@@ -10,6 +10,8 @@ import {
   getMockEventDetail,
 } from '../data/mock.js';
 import type { ExposureEvent, Institution, Playbook } from '../../../shared/types/api.js';
+import { generateCitizenReply, mockCitizenReply } from '../lib/citizen-chat.js';
+import { hasMiniMax } from '../lib/env.js';
 
 function useMock(): boolean {
   return !hasSupabase();
@@ -19,6 +21,7 @@ export async function registerApiRoutes(app: FastifyInstance) {
   app.get('/api/health', async () => ({
     status: 'ok',
     supabase: hasSupabase(),
+    minimax: hasMiniMax(),
     mock: useMock(),
     version: '0.1.0',
   }));
@@ -185,23 +188,31 @@ export async function registerApiRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.flatten() });
     }
-    const lastUser = [...parsed.data.messages].reverse().find((m) => m.role === 'user');
-    const query = lastUser?.content ?? '';
 
-    // Fase 0: respuesta mock (MiniMax en Fase 1)
-    const answer = `Soy el asistente ciudadano de NOMAD Centinela (modo demo). Recibí tu consulta sobre: "${query.slice(0, 120)}". 
-
-Recomendaciones generales:
-• Rotá contraseñas si tu correo apareció en una brecha pública.
-• Activá 2FA en banca, correo y redes sociales.
-• No compartas códigos OTP con nadie.
-
-Para verificar exposición usá POST /api/citizen/check con el prefijo SHA-1 de 5 caracteres de tu email. Prefijos de prueba: a1b2c, d4e5f, f6a7b.`;
-
-    return {
-      role: 'assistant',
-      content: answer,
-      mock: true,
-    };
+    try {
+      const { content, mock } = await generateCitizenReply(parsed.data.messages);
+      return {
+        role: 'assistant' as const,
+        content,
+        mock,
+        provider: mock ? undefined : 'minimax',
+        model: mock ? undefined : process.env.MINIMAX_MODEL,
+      };
+    } catch (err) {
+      req.log.error(err, 'MiniMax chat failed');
+      if (hasMiniMax()) {
+        return reply.status(502).send({
+          error: 'MiniMax request failed',
+          message: err instanceof Error ? err.message : 'Unknown error',
+          hint: 'Verifica MINIMAX_API_KEY y MINIMAX_BASE_URL en backend/.env',
+        });
+      }
+      const lastUser = [...parsed.data.messages].reverse().find((m) => m.role === 'user');
+      return {
+        role: 'assistant' as const,
+        content: mockCitizenReply(lastUser?.content ?? ''),
+        mock: true,
+      };
+    }
   });
 }
