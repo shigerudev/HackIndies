@@ -1,7 +1,7 @@
 # HANDOFF — NOMAD Centinela
 
 Documento de continuidad para nuevas sesiones de Cursor / Claude CLI.  
-Actualizado tras conectar **Supabase** y **MiniMax** (sin implementar aún Triage, Make completo, ni SSE).
+Actualizado tras conectar **Supabase**, **MiniMax** y **Make webhook** (sin Triage/SSE/RAG aún).
 
 ---
 
@@ -24,7 +24,7 @@ Actualizado tras conectar **Supabase** y **MiniMax** (sin implementar aún Triag
 | API + agentes | Node.js, Fastify, Vercel AI SDK v5, Zod |
 | DB | Supabase (Postgres 17 + pgvector) |
 | LLM | MiniMax (`vercel-minimax-ai-provider`) |
-| Orquestación | Make.com (pendiente cablear) |
+| Orquestación | Make.com (webhook ingest) |
 | Web | Next.js 15, Tailwind |
 | Mobile | Flutter |
 
@@ -36,9 +36,10 @@ Actualizado tras conectar **Supabase** y **MiniMax** (sin implementar aún Triag
 |-------------|--------|--------|
 | **Supabase** | Conectado | Proyecto cloud **Nomada HackIndies**, ref `vjeqrhxfmaghpkkmjvaq` |
 | **MiniMax** | Conectado | Chat ciudadano en `POST /api/agent/chat` → `mock: false` |
-| **Make.com** | Pendiente | Siguiente a conectar (webhook + env, sin escenarios pesados aún) |
+| **Make.com** | Webhook listo | `POST /api/webhooks/make/ingest` + `MAKE_WEBHOOK_SECRET`; ver `docs/MAKE-CONNECT.md` |
 | **Deploy** | Pendiente | Fase 3 (Vercel web + Fly/Railway backend) |
-| **MCP Supabase (Cursor)** | Opcional | Requiere `SUPABASE_ACCESS_TOKEN` en entorno de usuario; ver `docs/MCP-SETUP.md` |
+| **MCP Supabase (Cursor)** | Opcional | `SUPABASE_ACCESS_TOKEN` en entorno de usuario; ver `docs/MCP-SETUP.md` |
+| **MCP v0 (Cursor)** | Configurado | `V0_API_KEY` + servidor `v0` en `.cursor/mcp.json`; ver `docs/MCP-SETUP.md` |
 
 ### Supabase
 
@@ -55,12 +56,13 @@ Actualizado tras conectar **Supabase** y **MiniMax** (sin implementar aún Triag
 - Probar: `cd backend && npm run test:minimax`
 - Health: `GET /api/health` → `minimax: true`
 
-### Make.com (siguiente)
+### Make.com
 
-- Sin MCP oficial; integración HTTP
-- Placeholders en `backend/.env.example`: `MAKE_WEBHOOK_SECRET`, (opcional) `MAKE_API_TOKEN`
-- Endpoint previsto: `POST /api/webhooks/make/ingest` (aún no implementado)
-- Doc futura: `docs/MAKE-SCENARIOS.md`
+- Env: `MAKE_WEBHOOK_SECRET` (obligatorio), `MAKE_API_TOKEN` (opcional, Fase 2)
+- Endpoints: `POST /api/webhooks/make/ingest`, `GET /api/webhooks/make/health`
+- Código: `backend/src/routes/webhooks-make.ts`, `backend/src/lib/make-ingest.ts`
+- Probar: `npm run test:make`, `docs/MAKE-CONNECT.md`
+- Escenarios HITL: `docs/MAKE-SCENARIOS.md` (Fase 2)
 
 ---
 
@@ -68,7 +70,9 @@ Actualizado tras conectar **Supabase** y **MiniMax** (sin implementar aún Triag
 
 | Método | Ruta | Estado |
 |--------|------|--------|
-| GET | `/api/health` | OK (+ flags supabase/minimax) |
+| GET | `/api/health` | OK (+ flags supabase/minimax/make) |
+| POST | `/api/webhooks/make/ingest` | OK — secret + Supabase |
+| GET | `/api/webhooks/make/health` | OK — ping con secret |
 | GET | `/api/institutions` | OK (Supabase o mock) |
 | GET | `/api/events` | OK |
 | GET | `/api/events/:id` | OK |
@@ -104,6 +108,7 @@ cd backend && npm install && npm run dev
 # Tests
 npm run test:supabase
 npm run test:minimax
+npm run test:make
 
 # Supabase CLI (requiere SUPABASE_ACCESS_TOKEN)
 npx supabase projects list
@@ -170,7 +175,7 @@ Copiar al iniciar sesión:
 ```markdown
 Continúo NOMAD Centinela. Lee docs/HANDOFF.md, README.md, docs/PHASES.md y AGENTS.md.
 
-Contexto: Supabase y MiniMax ya conectados. Siguiente: cablear Make.com (env + webhook mínimo), sin implementar Triage/SSE aún.
+Contexto: Supabase, MiniMax y Make webhook conectados. Siguiente: Triage/Investigator, SSE, RAG (Fase 1).
 
 Trabajo en c:\Users\hugow\Repos\HackIndies. Respeta .cursor/rules/ y no commitees secretos.
 ```
