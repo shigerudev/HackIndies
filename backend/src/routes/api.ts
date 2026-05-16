@@ -22,6 +22,8 @@ export async function registerApiRoutes(app: FastifyInstance) {
     status: 'ok',
     supabase: hasSupabase(),
     minimax: hasMiniMax(),
+    make_webhook: hasMakeWebhook(),
+    make_api: hasMakeApi(),
     mock: useMock(),
     version: '0.1.0',
   }));
