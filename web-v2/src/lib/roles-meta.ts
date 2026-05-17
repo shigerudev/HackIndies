@@ -16,7 +16,7 @@ export const ROLE_META: Record<Role, { label: string; desc: string; defaultRoute
   periodista: {
     label: 'Periodista',
     desc: 'Medios independientes, investigación',
-    defaultRoute: '/app/casos',
+    defaultRoute: '/casos',
   },
   ciudadano: {
     label: 'Ciudadano',

@@ -19,7 +19,11 @@ const hitlTokenSchema = z.object({
 export async function registerHitlRoutes(app: FastifyInstance) {
   // Validate HITL token on all routes
   app.addHook('preHandler', async (req, reply) => {
-    // Allow mock/dev bypass
+    // Public routes — no auth ever needed
+    const path = req.url.split('?')[0];
+    if (path === '/' || path.startsWith('/api/health') || path.startsWith('/api/institutions') || path.startsWith('/api/events') || path.startsWith('/api/dev')) return;
+
+    // Allow mock/dev bypass for authenticated routes too
     if (useMock()) return;
     const token = req.headers['x-hitl-token'];
     const expected = process.env.HITL_TOKEN ?? env.makeWebhookSecret;

@@ -24,9 +24,6 @@ const NAV_BY_ROLE: Record<Role, { label: string; items: NavItem[] }> = {
       { href: '/app/dashboard', label: 'Inicio', icon: <LayoutGrid size={16} /> },
       { href: '/app/eventos', label: 'Eventos', icon: <Shield size={16} /> },
       { href: '/app/hitl', label: 'HITL', icon: <ListChecks size={16} />, badge: '5' },
-      { href: '/app/playbooks', label: 'Playbooks', icon: <BookOpen size={16} /> },
-      { href: '/app/instituciones', label: 'Instituciones', icon: <Building2 size={16} /> },
-      { href: '/app/casos', label: 'Casos', icon: <LayoutGrid size={16} /> },
       { href: '/app/citizen', label: 'Ciudadano', icon: <MessageCircle size={16} /> },
     ],
   },
@@ -35,13 +32,13 @@ const NAV_BY_ROLE: Record<Role, { label: string; items: NavItem[] }> = {
     items: [
       { href: '/app/hitl', label: 'HITL', icon: <ListChecks size={16} />, badge: '5' },
       { href: '/app/eventos', label: 'Eventos', icon: <Shield size={16} /> },
-      { href: '/app/casos', label: 'Casos', icon: <LayoutGrid size={16} /> },
+      { href: '/casos', label: 'Casos', icon: <LayoutGrid size={16} /> },
     ],
   },
   periodista: {
     label: 'Periodista',
     items: [
-      { href: '/app/casos', label: 'Casos', icon: <LayoutGrid size={16} /> },
+      { href: '/casos', label: 'Casos', icon: <LayoutGrid size={16} /> },
       { href: '/app/eventos', label: 'Eventos publicados', icon: <Shield size={16} /> },
       { href: '/app/playground', label: 'API playground', icon: <BookOpen size={16} /> },
     ],

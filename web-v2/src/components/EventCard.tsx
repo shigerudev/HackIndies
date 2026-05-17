@@ -5,7 +5,7 @@ import { SeverityBadge } from './SeverityBadge';
 export function EventCard({ event }: { event: ExposureEvent }) {
   return (
     <Link
-      href={`/events/${event.id}`}
+      href={`/app/eventos/${event.id}`}
       className="block rounded-lg border border-slate-700 bg-slate-900/60 p-4 transition hover:border-cyan-700/60"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">

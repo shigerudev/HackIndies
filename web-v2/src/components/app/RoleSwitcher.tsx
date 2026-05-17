@@ -40,7 +40,7 @@ export function RoleSwitcher({ currentRole }: Props) {
                 localStorage.setItem('nomad_role', r);
                 setOpen(false);
                 // Use the ?as= role override
-                window.location.href = `/app?as=${r}`;
+                window.location.href = `/app/api/role/set?role=${r}`;
               }}
             >
               <div>
