@@ -2,10 +2,15 @@
 
 import { FormEvent, useState } from 'react';
 import { API_URL } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-export function CitizenChat() {
+export type CitizenChatProps = {
+  variant?: 'standalone' | 'dashboard';
+};
+
+export function CitizenChat({ variant = 'standalone' }: CitizenChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,16 +77,26 @@ export function CitizenChat() {
           setMessages([...next, { role: 'assistant', content: assistant }]);
         }
         if (!assistant) {
-          const json = await fetch(`${API_URL}/api/agent/chat`, {
+          const json = (await fetch(`${API_URL}/api/agent/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages: next }),
-          }).then((r) => r.json());
-          setMessages([...next, { role: 'assistant', content: json.content }]);
+          }).then((r) => r.json())) as { content?: string };
+          const content =
+            typeof json.content === 'string' && json.content.trim()
+              ? json.content
+              : 'Sin respuesta de texto.';
+          setMessages([...next, { role: 'assistant', content }]);
         }
       } else {
-        const json = (await res.json()) as { content: string };
-        setMessages([...next, { role: 'assistant', content: json.content }]);
+        const json = (await res.json()) as { content?: string };
+        setMessages([
+          ...next,
+          {
+            role: 'assistant',
+            content: typeof json.content === 'string' ? json.content : 'Sin contenido.',
+          },
+        ]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de chat');
@@ -91,41 +106,72 @@ export function CitizenChat() {
     }
   }
 
+  const dash = variant === 'dashboard';
+
   return (
-    <div className="flex h-[420px] flex-col rounded-lg border border-slate-700 bg-slate-900/50">
-      <div className="border-b border-slate-700 px-4 py-2 text-sm font-medium text-cyan-400">
-        Chat ciudadano
+    <div
+      className={cn(
+        'flex flex-col rounded-2xl border overflow-hidden',
+        dash ? 'min-h-[420px] h-[460px] border-white/[0.08] bg-white/[0.03]' : 'h-[420px] rounded-lg border-slate-700 bg-slate-900/50',
+      )}
+    >
+      <div
+        className={cn(
+          'border-b px-4 py-3 text-[13px] font-medium shrink-0',
+          dash ? 'border-white/[0.06] text-white/80' : 'border-slate-700 text-cyan-400',
+        )}
+      >
+        Asistente ciudadano
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-0">
         {messages.length === 0 && (
-          <p className="text-sm text-slate-500">
-            Preguntá sobre qué hacer si tu correo apareció en una brecha (sin datos personales).
+          <p className={cn('text-[13px]', dash ? 'text-white/38' : 'text-slate-500')}>
+            Pregunta qué hacer si tu correo pudo aparecer en una brecha o cómo endurecer cuentas. No compartimos
+            contraseñas ni datos privados aquí.
           </p>
         )}
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`text-sm ${m.role === 'user' ? 'text-cyan-100' : 'text-slate-300'}`}
+            className={cn(
+              'text-[13px] leading-relaxed',
+              m.role === 'user'
+                ? dash ? 'text-white/90' : 'text-cyan-100'
+                : dash ? 'text-white/62' : 'text-slate-300',
+            )}
           >
-            <span className="text-xs font-medium uppercase text-slate-500">{m.role}: </span>
-            {m.content}
+            <span className={cn('text-[10px] font-semibold uppercase tracking-wider', dash ? 'text-white/35' : 'text-slate-500')}>
+              {m.role === 'user' ? 'Tú ' : 'Asistente '}
+            </span>
+            <span>{m.content}</span>
           </div>
         ))}
-        {loading && <p className="text-xs text-slate-500">Escribiendo…</p>}
-        {error && <p className="text-sm text-red-300">{error}</p>}
+        {loading && <p className={cn('text-[11px]', dash ? 'text-white/40' : 'text-slate-500')}>Escribiendo…</p>}
+        {error && <p className="text-[13px] text-red-300/95">{error}</p>}
       </div>
-      <form className="flex gap-2 border-t border-slate-700 p-3" onSubmit={onSubmit}>
+      <form
+        className={cn('flex gap-2 border-t p-3 shrink-0', dash ? 'border-white/[0.06]' : 'border-slate-700')}
+        onSubmit={onSubmit}
+      >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 rounded border border-slate-600 bg-slate-950 px-3 py-2 text-sm outline-none focus:border-cyan-600"
+          className={cn(
+            'flex-1 rounded-xl px-3 py-2.5 text-[13px] outline-none transition-colors placeholder:text-white/22',
+            dash
+              ? 'border border-white/[0.1] bg-white/[0.04] text-white focus:border-white/[0.22]'
+              : 'rounded border border-slate-600 bg-slate-950 text-slate-100 focus:border-cyan-600 placeholder:text-slate-600',
+          )}
           placeholder="Tu pregunta…"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading}
-          className="rounded bg-cyan-700 px-4 py-2 text-sm text-white hover:bg-cyan-600 disabled:opacity-50"
+          className={cn(
+            'rounded-xl px-4 py-2.5 text-[12px] font-semibold disabled:opacity-45 transition-colors',
+            dash ? 'bg-white text-black hover:bg-white/92' : 'rounded bg-cyan-700 px-4 py-2 text-sm text-white hover:bg-cyan-600',
+          )}
         >
           Enviar
         </button>

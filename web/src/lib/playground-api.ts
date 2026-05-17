@@ -1,12 +1,14 @@
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'https://nomad-centinela-api.vercel.app';
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export type Health = {
   status: 'ok';
   supabase: boolean;
   minimax: boolean;
   make_webhook: boolean;
-  timestamp: string;
+  make_api?: boolean;
+  mock?: boolean;
+  version?: string;
 };
 
 export async function fetchHealth(): Promise<Health> {
@@ -16,13 +18,15 @@ export async function fetchHealth(): Promise<Health> {
 }
 
 export type Institution = {
+  id: string;
   slug: string;
   name: string;
   sector: string;
-  event_count: number;
+  country: string;
+  domain_obfuscated: string;
 };
 
-export async function fetchInstitutions(): Promise<{ data: Institution[] }> {
+export async function fetchInstitutions(): Promise<{ data: Institution[]; mock?: boolean }> {
   const res = await fetch(`${API_URL}/api/institutions`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
@@ -30,8 +34,11 @@ export async function fetchInstitutions(): Promise<{ data: Institution[] }> {
 
 export type CitizenCheck = {
   exposed: boolean;
-  hash_prefix: string;
-  matched_institutions: string[];
+  events: Array<{
+    id: string;
+    title: string;
+    institution_name: string;
+  }>;
   recommendations: string[];
   mock: boolean;
 };
@@ -48,8 +55,10 @@ export async function checkCitizen(hashPrefix: string): Promise<CitizenCheck> {
 
 export type Playbook = {
   slug: string;
-  title: string;
+  title_es: string;
   body_md: string;
+  effort_hours: number;
+  cost_estimate_usd: number;
   tags: string[];
 };
 
@@ -61,19 +70,40 @@ export async function fetchPlaybook(slug: string): Promise<{ data: Playbook }> {
   return res.json();
 }
 
-export async function makeIngest(payload: {
-  institution_slug: string;
-  title: string;
-  severity: string;
-  external_id: string;
-}): Promise<{ success: boolean; event_id: string }> {
+export async function makeIngest(
+  payload: {
+    institution_slug: string;
+    title: string;
+    severity: string;
+    external_id: string;
+  },
+  webhookSecret: string
+): Promise<{ success: boolean; event_id: string } & Record<string, unknown>> {
+  if (!webhookSecret.trim()) {
+    throw new Error(
+      'Falta secreto de webhook. Define NEXT_PUBLIC_MAKE_WEBHOOK_SECRET igual que MAKE_WEBHOOK_SECRET en el backend.'
+    );
+  }
   const res = await fetch(`${API_URL}/api/webhooks/make/ingest`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Nomad-Webhook-Secret': 'nomad-make-dev-7f3a9c2e1b8d4f6a0e5c9b2d8f1a4e7',
+      'X-Nomad-Webhook-Secret': webhookSecret,
     },
     body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+/** POST /api/agent/chat — respuesta JSON (en Vercel no hay streaming real). */
+export async function citizenAgentChat(
+  messages: Array<Record<string, unknown>>
+): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_URL}/api/agent/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();

@@ -1,3 +1,5 @@
+import type { Playbook } from './playground-api'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export type ExposureEvent = {
@@ -34,11 +36,14 @@ export type ExposureEventDetail = ExposureEvent & {
   }>;
 };
 
-export async function fetchEvents(params?: { status?: string }): Promise<{
+export async function fetchEvents(params?: { status?: string; severity?: string }): Promise<{
   data: ExposureEvent[];
   mock: boolean;
 }> {
-  const qs = params?.status ? `?status=${encodeURIComponent(params.status)}` : '';
+  const sp = new URLSearchParams();
+  if (params?.status) sp.set('status', params.status);
+  if (params?.severity) sp.set('severity', params.severity);
+  const qs = sp.toString() ? `?${sp.toString()}` : '';
   const res = await fetch(`${API_URL}/api/events${qs}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
@@ -70,7 +75,12 @@ export async function runInvestigate(eventId: string, triage?: unknown) {
   return res.json();
 }
 
-export async function searchPlaybooks(q: string, mode: 'fts' | 'vector' | 'auto' = 'auto') {
+export async function searchPlaybooks(q: string, mode: 'fts' | 'vector' | 'auto' = 'auto'): Promise<{
+  data: Playbook[];
+  mock?: boolean;
+  query?: string;
+  mode?: string;
+}> {
   const modeParam = mode !== 'auto' ? `&mode=${mode}` : '';
   const res = await fetch(`${API_URL}/api/playbooks/search?q=${encodeURIComponent(q)}${modeParam}`, {
     cache: 'no-store',

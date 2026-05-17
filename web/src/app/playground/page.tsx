@@ -12,10 +12,11 @@ import {
   fetchPlaybook,
   makeIngest,
   runPipeline,
+  citizenAgentChat,
 } from '@/lib/playground-api';
-import { fetchEvents, runTriage, runInvestigate, searchPlaybooks } from '@/lib/api';
+import { fetchEvents, runTriage, runInvestigate, searchPlaybooks, API_URL } from '@/lib/api';
 
-const API_URL = 'https://nomad-centinela-api.vercel.app';
+const WEBHOOK_SECRET = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_SECRET ?? '';
 
 const snips = (path: string, body?: string) => [
   {
@@ -96,26 +97,19 @@ export default function PlaygroundPage() {
               GitHub ↗
             </a>
             <a
-              href="https://us2.make.com/2298505/scenarios"
+              href="https://www.make.com"
               className="text-sm text-slate-400 hover:text-cyan-400 transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Make.com scenarios ↗
+              Make.com ↗
             </a>
-            <a
-              href="https://nomad-centinela-api.vercel.app/api/health"
+            <a href={`${API_URL}/api/health`}
               className="text-sm text-slate-400 hover:text-cyan-400 transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             >
               API health ↗
-            </a>
-            <a
-              href="/demo"
-              className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              Live demo ↗
             </a>
             <a
               href="/casos/digecam"
@@ -132,7 +126,7 @@ export default function PlaygroundPage() {
         {/* SECTION 1: QUICK START */}
         <Section
           title="Quick start"
-          description="Conectar tu app al backend en 30 segundos."
+          description={`Apunta el front a NEXT_PUBLIC_API_URL (${API_URL}).`}
           badge="setup"
         >
           <div className="space-y-4">
@@ -142,15 +136,16 @@ export default function PlaygroundPage() {
                 {
                   lang: 'bash',
                   label: '.env',
-                  code: `NEXT_PUBLIC_API_URL=https://nomad-centinela-api.vercel.app`,
+                  code: `NEXT_PUBLIC_API_URL=http://localhost:3001
+# Opcional, debe coincidir con MAKE_WEBHOOK_SECRET del backend si pruebas ingestión:
+# NEXT_PUBLIC_MAKE_WEBHOOK_SECRET=tu-secreto`,
                 },
                 {
                   lang: 'dart',
                   label: 'Flutter',
-                  code: `// lib/main.dart o similar
-const apiBase = String.fromEnvironment(
+                  code: `const apiBase = String.fromEnvironment(
   'API_BASE',
-  defaultValue: 'https://nomad-centinela-api.vercel.app',
+  defaultValue: 'http://10.0.2.2:3001',
 );`,
                 },
               ]} />
@@ -162,7 +157,7 @@ const apiBase = String.fromEnvironment(
                 {
                   lang: 'curl',
                   label: 'curl',
-                  code: `curl -s https://nomad-centinela-api.vercel.app/api/health | jq`,
+                  code: `curl -s "${API_URL}/api/health" | jq`,
                 },
                 {
                   lang: 'typescript',
@@ -196,8 +191,7 @@ const health = await res.json();
                       ['GET', '/api/events', 'Eventos de exposición'],
                       ['GET', '/api/events/:id', 'Detalle de un evento'],
                       ['POST', '/api/citizen/check', 'Verificar si un hash está expuesto'],
-                      ['GET', '/api/playbooks', 'Lista de playbooks'],
-                      ['GET', '/api/playbooks/search?q=', 'Buscar playbooks (FTS)'],
+                      ['GET', '/api/playbooks/search?q=', 'Buscar playbooks (FTS/vector cuando aplique)'],
                       ['GET', '/api/playbooks/:slug', 'Contenido de un playbook'],
                       ['POST', '/api/agent/triage', 'Ejecutar agente Triage'],
                       ['POST', '/api/agent/investigate', 'Ejecutar agente Investigator'],
@@ -221,7 +215,7 @@ const health = await res.json();
         {/* SECTION 2: API EXPLORER */}
         <Section
           title="API explorer"
-          description="Ejecuta cada endpoint en tiempo real contra producción."
+          description={`Ejecuta cada endpoint contra ${API_URL}`}
           badge="interactive"
         >
           <div className="space-y-6">
@@ -242,7 +236,7 @@ const health = await res.json();
             <EndpointCard
               method="GET"
               path="/api/institutions"
-              description="Lista todas las instituciones que NOMAD monitorea con conteo de eventos."
+              description="Instituciones del catálogo con sector, país y dominio ofuscado."
               action={async () => {
                 const r = await fetchInstitutions();
                 return r;
@@ -256,7 +250,7 @@ const health = await res.json();
               path="/api/events"
               description="Lista eventos de exposición. Filtra por status o severity."
               params={[
-                { name: 'status', label: 'status', type: 'select', options: ['', 'pending_review', 'approved_public', 'dismissed'], default: '' },
+                { name: 'status', label: 'status', type: 'select', options: ['', 'pending_review', 'approved', 'rejected', 'published'], default: '' },
                 { name: 'severity', label: 'severity', type: 'select', options: ['', 'low', 'medium', 'high', 'critical'], default: '' },
               ]}
               action={async (p) => {
@@ -307,11 +301,15 @@ const health = await res.json();
                   name: 'hash_prefix',
                   label: 'hash_prefix',
                   type: 'text',
-                  default: 'a1b2c',
+                  default: '',
                 },
               ]}
               action={async (p) => {
-                const r = await checkCitizen(p.hash_prefix);
+                const prefix = (p.hash_prefix || '').trim().toLowerCase();
+                if (prefix.length !== 5) {
+                  throw new Error('El prefijo debe tener exactamente 5 caracteres hex (como exige el backend).');
+                }
+                const r = await checkCitizen(prefix);
                 return r;
               }}
               snippets={[
@@ -349,15 +347,22 @@ const health = await res.json();
                   name: 'slug',
                   label: 'slug',
                   type: 'select',
-                  options: ['credential-exposure-response', 'phishing-campaign-detection', 'insider-threat-response'],
-                  default: 'credential-exposure-response',
+                  options: [
+                    'rotate-credentials',
+                    'stealer-response',
+                    'enable-2fa',
+                    'csp-headers',
+                    'api-rate-limit',
+                    'incident-comms',
+                  ],
+                  default: 'rotate-credentials',
                 },
               ]}
               action={async (p) => {
                 const r = await fetchPlaybook(p.slug);
                 return r;
               }}
-              snippets={snips('/api/playbooks/credential-exposure-response')}
+              snippets={snips('/api/playbooks/rotate-credentials')}
             />
 
             {/* 8. Triage */}
@@ -380,15 +385,6 @@ const health = await res.json();
               }}
               snippets={[
                 ...snips('/api/agent/triage', '{"event_id":"..."}'),
-                {
-                  lang: 'typescript',
-                  label: 'con fallback mock',
-                  code: `const json = await runTriage(eventId);
-if (json.mock) {
-  console.log('Triage en modo mock — MiniMax no disponible');
-  // Mostrar badge "demo" en la UI
-}`,
-                },
               ]}
             />
 
@@ -434,40 +430,79 @@ if (json.mock) {
               snippets={snips('/api/agent/pipeline', '{"event_id":"..."}')}
             />
 
+            {/* 10b. Citizen chat */}
+            <EndpointCard
+              method="POST"
+              path="/api/agent/chat"
+              description="Asistente ciudadano. Fuera del stream SSE el backend suele responder JSON con `{ role, content, mock }`."
+              params={[
+                {
+                  name: 'message',
+                  label: 'message',
+                  type: 'text',
+                  default: '¿Qué recomiendas después de una filtración de credenciales?',
+                },
+              ]}
+              action={async (p) =>
+                citizenAgentChat([{ role: 'user', content: p.message || 'Hola.' }])
+              }
+              snippets={[
+                ...snips('/api/agent/chat', '{"messages":[{"role":"user","content":"…"}]}'),
+              ]}
+            />
+
             {/* 11. Make ingest */}
             <EndpointCard
               method="POST"
               path="/api/webhooks/make/ingest"
-              description="Ingesta evento sintético desde Make.com. El secret ya viene configurado en este playground."
+              description={
+                WEBHOOK_SECRET
+                  ? 'Ingestión con `X-Nomad-Webhook-Secret` tomado desde `NEXT_PUBLIC_MAKE_WEBHOOK_SECRET`.'
+                  : 'Configura NEXT_PUBLIC_MAKE_WEBHOOK_SECRET (igual que MAKE_WEBHOOK_SECRET en backend) antes de ejecutar.'
+              }
               params={[
                 { name: 'institution_slug', label: 'institution_slug', type: 'text', default: 'digecam' },
                 { name: 'title', label: 'title', type: 'text', default: '[Sintético] Test desde playground' },
                 { name: 'severity', label: 'severity', type: 'select', options: ['low', 'medium', 'high', 'critical'], default: 'medium' },
-                { name: 'external_id', label: 'external_id', type: 'text', default: 'playground-001' },
+                { name: 'external_id', label: 'external_id', type: 'text', default: 'playground-ingest-001' },
               ]}
-              action={async (p) => {
-                return makeIngest({
-                  institution_slug: p.institution_slug,
-                  title: p.title,
-                  severity: p.severity,
-                  external_id: p.external_id,
-                });
-              }}
+              action={async (p) =>
+                makeIngest(
+                  {
+                    institution_slug: p.institution_slug,
+                    title: p.title,
+                    severity: p.severity,
+                    external_id: p.external_id,
+                  },
+                  WEBHOOK_SECRET
+                )
+              }
               snippets={[
                 {
                   lang: 'curl',
                   label: 'curl',
-                  code: `curl -X POST ${API_URL}/api/webhooks/make/ingest \\
+                  code: `# export WEBHOOK=$NEXT_PUBLIC_MAKE_WEBHOOK_SECRET
+curl -X POST ${API_URL}/api/webhooks/make/ingest \\
   -H "Content-Type: application/json" \\
-  -H "X-Nomad-Webhook-Secret: nomad-make-dev-7f3a9c2e1b8d4f6a0e5c9b2d8f1a4e7" \\
+  -H "X-Nomad-Webhook-Secret: $WEBHOOK" \\
   -d '{"institution_slug":"digecam","title":"Test","severity":"medium","external_id":"test-001"}'`,
                 },
                 {
                   lang: 'typescript',
                   label: 'Next.js',
-                  code: `// Integrado en Make.com — llamado automáticamente
-// por el escenario "NOMAD Centinela - Ingesta OSINT sintética"
-// El hook URL es: https://hook.us2.make.com/vz2nrhdwcfdh64iz7igbbj0iirem4wx5`,
+                  code: `await fetch(\`${API_URL}/api/webhooks/make/ingest\`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Nomad-Webhook-Secret': process.env.NEXT_PUBLIC_MAKE_WEBHOOK_SECRET ?? '',
+  },
+  body: JSON.stringify({
+    institution_slug: 'digecam',
+    title: 'Test',
+    severity: 'medium',
+    external_id: 'test-001',
+  }),
+});`,
                 },
               ]}
             />
@@ -572,7 +607,7 @@ import 'package:http/http.dart' as http;
 class NomadApi {
   static const apiBase = String.fromEnvironment(
     'API_BASE',
-    defaultValue: 'https://nomad-centinela-api.vercel.app',
+    defaultValue: 'http://10.0.2.2:3001',
   );
 
   static Future<List<dynamic>> getEvents({String? status}) async {
@@ -607,14 +642,16 @@ class NomadApi {
               </p>
               <CodeBlock snippets={[{
                 lang: 'typescript',
-                label: 'chat fallback (funciona en prod)',
+                label: 'chat JSON (producción/serverless)',
                 code: `const res = await fetch(\`${API_URL}/api/agent/chat\`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ messages: [{ role: 'user', content: '¿Estoy expuesto?' }] }),
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: '¿Estoy expuesto?' }],
+  }),
 });
-const { messages } = await res.json(); // JSON normal, no stream
-const reply = messages[messages.length - 1].content;`,
+const json = await res.json();
+// típico: { role: 'assistant', content: '...', mock?: boolean }`,
               }]} />
             </div>
 
@@ -623,35 +660,22 @@ const reply = messages[messages.length - 1].content;`,
 
         {/* SECTION 4: MAKE.COM SCENARIOS */}
         <Section
-          title="Make.com scenarios"
-          description="Los webhooks activos en tu cuenta. Puedes dispararlos manualmente o conectar fuentes OSINT."
+          title="Make.com"
+          description={`Conecta escenarios personalizados para que disparen contra ${API_URL}/api/webhooks/make/ingest (con el secreto compartido). No compartas URLs de webhook en público.`}
           badge="make"
           badgeColor="bg-purple-900 text-purple-300"
         >
-          <div className="space-y-4">
-            {[
-              {
-                name: 'NOMAD Centinela - Ingesta OSINT sintética',
-                id: '5087018',
-                hook: 'https://hook.us2.make.com/vz2nrhdwcfdh64iz7igbbj0iirem4wx5',
-                desc: 'Trigger: webhook personalizado. Envía datos al backend via POST /api/webhooks/make/ingest.',
-              },
-              {
-                name: 'NOMAD Centinela - HITL email',
-                id: '5087019',
-                hook: 'https://hook.us2.make.com/1f2bkj72aiqxb4abellrbn3ulkwcbttv',
-                desc: 'Trigger: webhook personalizado. Envía email a z648s.7bt@gmail.com cuando el backend detecta pending_review.',
-              },
-            ].map((s) => (
-              <div key={s.id} className="rounded-xl border border-slate-700 bg-slate-900/50 p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-white">{s.name}</h3>
-                  <span className="text-xs font-mono text-slate-500">id {s.id}</span>
-                </div>
-                <p className="text-sm text-slate-400 mb-3">{s.desc}</p>
-                <code className="text-xs font-mono text-cyan-400 bg-slate-950 rounded px-2 py-1 break-all">{s.hook}</code>
-              </div>
-            ))}
+          <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-5 text-sm text-slate-300 leading-relaxed space-y-3">
+            <p>
+              Este repositorio no embebe webhooks reales. Crea en Make un módulo HTTP que haga{' '}
+              <code className="text-cyan-300">POST</code> al endpoint de ingestión del backend y pasa el header{' '}
+              <code className="text-cyan-300">X-Nomad-Webhook-Secret</code> con el mismo valor que{' '}
+              <code className="text-cyan-300">MAKE_WEBHOOK_SECRET</code>.
+            </p>
+            <p className="text-slate-400">
+              Opcionalmente expone <code>NEXT_PUBLIC_MAKE_WEBHOOK_SECRET</code> sólo en builds controlados para poder
+              ejecutar la tarjeta desde el playground (en producción pública evita publicar el secreto).
+            </p>
           </div>
         </Section>
 
