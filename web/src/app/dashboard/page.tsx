@@ -1,6 +1,4 @@
 import WelcomeHero from '@/components/dashboard/WelcomeHero'
-import LivePipelineRunner from '@/components/dashboard/LivePipelineRunner'
-import HowItWorks from '@/components/dashboard/HowItWorks'
 import SmartInsights from '@/components/dashboard/SmartInsights'
 import AnalyticsOverview from '@/components/charts/AnalyticsOverview'
 import InstitutionsDirectory from '@/components/dashboard/InstitutionsDirectory'
@@ -27,8 +25,6 @@ export default function DashboardPage() {
   return (
     <div className="divide-y divide-white/[0.04]">
       <WelcomeHero />
-      <LivePipelineRunner />
-      <HowItWorks />
       <SmartInsights />
       <AnalyticsOverview />
       <InstitutionsDirectory />
