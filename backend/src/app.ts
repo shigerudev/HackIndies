@@ -7,7 +7,7 @@ import { registerHitlRoutes } from './routes/hitl.js';
 import { registerDevRoutes } from './routes/dev.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
-  const app = Fastify({ logger: process.env.VERCEL !== '1' });
+  const app = Fastify({ logger: true });
 
   await app.register(cors, {
     origin: [
@@ -33,7 +33,13 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.setErrorHandler((err, _req, reply) => {
     app.log.error(err);
-    reply.status(500).send({ error: 'Internal server error' });
+    const statusCode = (err as { statusCode?: number }).statusCode ?? 500;
+    const fastifyError = err as { message: string; code?: string };
+    reply.status(statusCode).send({
+      error: fastifyError.message,
+      code: fastifyError.code,
+      status: statusCode,
+    });
   });
 
   await app.ready();
