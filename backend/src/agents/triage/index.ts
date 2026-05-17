@@ -7,7 +7,7 @@ import { MOCK_EVENTS, MOCK_INSTITUTIONS } from '../../data/mock.js';
 import { TRIAGE_SYSTEM_PROMPT } from './prompt.js';
 import { TriageOutputSchema, type TriageInput, type TriageOutput } from './schema.js';
 
-function mockTriage(signal: { title: string; summary?: string; institution_slug?: string }): TriageOutput {
+function mockTriage(signal: { title: string; summary?: string; institution_slug?: string }, reason?: string): TriageOutput {
   const slug = signal.institution_slug ?? 'digecam';
   const lower = `${signal.title} ${signal.summary ?? ''}`.toLowerCase();
   const severity =
@@ -24,7 +24,7 @@ function mockTriage(signal: { title: string; summary?: string; institution_slug?
     malware_family: lower.includes('stealer') ? 'infostealer' : null,
     credentials_count_estimate: 0,
     confidence: 0.65,
-    reasoning_brief: 'Clasificación heurística en modo mock (sin MiniMax).',
+    reasoning_brief: reason ?? 'Clasificación heurística en modo mock (sin MiniMax).',
   };
 }
 
@@ -58,7 +58,7 @@ async function listInstitutionSlugs(): Promise<string[]> {
 export async function runTriage(
   input: TriageInput,
   existingTraces?: { run_id: string; latency_ms: number }[],
-): Promise<{ triage: TriageOutput; mock: boolean; run_id: string; event_id?: string }> {
+): Promise<{ triage: TriageOutput; mock: boolean; run_id: string; event_id?: string; _error?: string }> {
   const started = Date.now();
   let signal: { title: string; summary?: string; institution_slug?: string; source_type?: string };
 
@@ -113,10 +113,12 @@ ${JSON.stringify(signal, null, 2)}`,
         credentials_count_estimate: raw.credentials_count_estimate ?? 0,
       });
     } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
       console.error('[triage] LLM call failed, falling back to mock', {
-        error: err instanceof Error ? err.message : String(err),
+        error: errMsg,
+        stack: err instanceof Error ? err.stack : undefined,
       });
-      triage = mockTriage(signal);
+      triage = mockTriage(signal, `LLM falló: ${errMsg}`);
       mock = true;
     }
   }
@@ -129,6 +131,18 @@ ${JSON.stringify(signal, null, 2)}`,
     tools_called: [],
     latency_ms: Date.now() - started,
   });
+
+  const result: { triage: TriageOutput; mock: boolean; run_id: string; event_id?: string; _error?: string } = {
+    triage,
+    mock,
+    run_id,
+    event_id: input.event_id,
+  };
+  if (mock && !hasMiniMax()) {
+    // intentional mock — no error
+  } else if (mock) {
+    result._error = 'Triage cayó a mock luego de error de LLM. Ver logs del servidor.';
+  }
 
   if (input.event_id && hasSupabase() && !mock) {
     const sb = getSupabase()!;
@@ -144,5 +158,11 @@ ${JSON.stringify(signal, null, 2)}`,
       .eq('id', input.event_id);
   }
 
-  return { triage, mock, run_id, event_id: input.event_id };
+  return {
+    triage,
+    mock,
+    run_id,
+    event_id: input.event_id,
+    ...(mock && hasMiniMax() ? { _error: `LLM falló: ver reasoning_brief` } : {}),
+  };
 }

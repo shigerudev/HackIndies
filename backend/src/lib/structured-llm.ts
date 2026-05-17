@@ -3,7 +3,7 @@ import type { LanguageModel } from 'ai';
 import type { z } from 'zod';
 import { getMinimaxModel } from './minimax.js';
 
-const LLM_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS ?? 45_000);
+const LLM_TIMEOUT_MS = Number(process.env.LLM_TIMEOUT_MS ?? 90_000);
 
 export async function generateStructured<T extends z.ZodTypeAny>(params: {
   system: string;
