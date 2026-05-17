@@ -41,7 +41,7 @@ const CtaSection = () => {
                 </svg>
               </span>
             </a>
-            <a href="/dashboard" className="cta-secondary-btn pill">
+            <a href="/dashboard#pipeline" className="cta-secondary-btn pill">
               Abrir panel
             </a>
           </div>

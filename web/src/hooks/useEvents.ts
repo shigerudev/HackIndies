@@ -50,5 +50,12 @@ export function useEvents(params: UseEventsParams = {}): UseEventsResult {
     }
   }, [load, pollMs])
 
+  // React to external events that indicate new data arrived (e.g. LivePipelineRunner ran a preset)
+  useEffect(() => {
+    const handler = () => { load() }
+    window.addEventListener('nomad:events-changed', handler)
+    return () => window.removeEventListener('nomad:events-changed', handler)
+  }, [load])
+
   return { events, isMock, loading, error, refetch: load }
 }

@@ -20,7 +20,7 @@ const HeroContent = () => {
         Alerta temprana de exposición de credenciales en instituciones públicas de LATAM.
       </p>
       <div className="cta-container">
-        <a href="/dashboard" className="cta-btn pill">
+        <a href="/dashboard#pipeline" className="cta-btn pill">
           Ir al panel
         </a>
       </div>

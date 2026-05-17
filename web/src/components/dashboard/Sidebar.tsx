@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
+  Play,
   Sparkles,
   BarChart3,
   Terminal,
@@ -29,6 +30,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { hash: '#top',            label: 'Inicio',          icon: LayoutDashboard, group: 'Visión general' },
+  { hash: '#pipeline',       label: 'Pipeline en vivo', icon: Play,            group: 'Visión general' },
   { hash: '#insights',       label: 'Insights',        icon: Sparkles,        group: 'Visión general' },
   { hash: '#analytics',      label: 'Analíticas',      icon: BarChart3,       group: 'Visión general' },
   { hash: '#playground',     label: 'Agentes IA',      icon: Terminal,        group: 'Herramientas' },

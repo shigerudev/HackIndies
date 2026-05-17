@@ -104,6 +104,7 @@ export default function PlaybookExplorer() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const slugInputRef = useRef<HTMLInputElement>(null)
 
+  const [mode, setMode] = useState<'fts' | 'vector' | 'auto'>('auto')
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<Playbook[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -115,7 +116,7 @@ export default function PlaybookExplorer() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
-  const runSearch = useCallback(async (overrideQuery?: string) => {
+  const runSearch = useCallback(async (overrideQuery?: string, searchMode?: typeof mode) => {
     const raw = overrideQuery !== undefined ? overrideQuery : query
     const trimmed = raw.trim()
     if (!trimmed) {
@@ -125,8 +126,9 @@ export default function PlaybookExplorer() {
     }
     setSearching(true)
     setSearchError(null)
+    const effectiveMode = searchMode ?? mode
     try {
-      const { data } = await searchPlaybooks(trimmed)
+      const { data } = await searchPlaybooks(trimmed, effectiveMode)
       setHits(Array.isArray(data) ? data : [])
     } catch (err) {
       setSearchError(
@@ -138,7 +140,7 @@ export default function PlaybookExplorer() {
     } finally {
       setSearching(false)
     }
-  }, [query])
+  }, [query, mode])
 
   const loadBySlug = useCallback(async (slug: string) => {
     const trimmed = slug.trim()
@@ -205,6 +207,31 @@ export default function PlaybookExplorer() {
               >
                 {searching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
               </button>
+            </div>
+            {/* FTS / Vector / Auto mode tabs */}
+            <div className="flex gap-1 mt-2">
+              {(['fts', 'vector', 'auto'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setMode(m)
+                    if (query.trim()) void runSearch(query)
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border ${
+                    mode === m
+                      ? 'bg-white/10 text-white border-white/[0.15]'
+                      : 'text-white/35 hover:text-white/60 border-transparent hover:bg-white/[0.04]'
+                  }`}
+                >
+                  {m.toUpperCase()}
+                </button>
+              ))}
+              {hits.length > 0 && (
+                <span className="ml-2 text-[10px] text-white/25 font-mono self-center">
+                  modo: {mode}
+                </span>
+              )}
             </div>
             {searchError && <p className="text-[12px] text-white/45">{searchError}</p>}
             {!searching && hits.length === 0 && query.trim() && !searchError && (
