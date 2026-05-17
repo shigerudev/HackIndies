@@ -1,8 +1,16 @@
+<p align="center">
+  <img src="assets/logo-horizontal.png" alt="NOMAD Centinela" width="600" />
+</p>
+
 # NOMAD Centinela
 
 **Alerta temprana de exposición de credenciales para instituciones públicas en LATAM.**
 
 Equipo **NOMAD security** · Track [Def/Acc — hack@latam](https://hack.indies.la/tracks/)
+
+[![CI](https://github.com/shigerudev/HackIndies/actions/workflows/ci.yml/badge.svg)](https://github.com/shigerudev/HackIndies/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE)
+[![Track](https://img.shields.io/badge/track-Def%2FAcc-22D3EE)](https://hack.indies.la/tracks/)
 
 ---
 
@@ -37,8 +45,6 @@ HIBP te dice si tu correo está expuesto — pero no ayuda al SOC del Estado. Sp
 
 **NOMAD es la primera plataforma open-source que une los cuatro mundos en español: ciudadano + defensor + periodista, con HITL ético explícito en cada decisión publicable.**
 
-![CI](https://github.com/<org>/HackIndies/actions/workflows/ci.yml/badge.svg)
-
 ```mermaid
 flowchart LR
   Web[Next.js] --> API[Node API]
@@ -48,14 +54,138 @@ flowchart LR
   API --> MM[MiniMax Fase1+]
 ```
 
+---
+
+## ¿Para quién es esta solución?
+
+NOMAD Centinela está diseñado para cuatro audiencias con necesidades complementarias. Cada una tiene una vista, agente y workflow específico — no es un producto genérico.
+
+### 1. Ciudadano (app Flutter + chequeo k-anonymity)
+
+**Quién:** empleado público, contratista del Estado, periodista, ciudadano que sospecha exposición de su correo institucional.
+
+**Necesita:** saber si su correo aparece en una brecha **sin revelar el correo entero** al servidor.
+
+**Qué hace en NOMAD:**
+- Abre la app móvil
+- Ingresa su correo (nunca sale del dispositivo)
+- La app calcula SHA-1 del correo, envía solo los **primeros 5 caracteres** del hash
+- Recibe respuesta agregada: "tu prefijo aparece en N brechas de demo" + recomendaciones genéricas (rotar contraseña, activar 2FA, alertas bancarias)
+
+**Por qué le importa:** HIBP existe en inglés y solo es web. La app NOMAD es nativa, en español, integrada con el contexto LATAM y los reportes de Vector Crítico.
+
+### 2. Defensor / SOC institucional (dashboard web + agente Defender)
+
+**Quién:** equipo de seguridad de un ministerio, dirección, municipalidad u organismo descentralizado. Suelen ser **2-5 personas con presupuesto limitado**.
+
+**Necesita:** señales tempranas + playbooks accionables en español con tiempo y costo estimados (no manuales corporativos de 80 páginas en inglés).
+
+**Qué hace en NOMAD:**
+- Abre `/` — ve la cola HITL y eventos publicados, ordenados por severidad
+- Click en un evento → ve las trazas de Triage e Investigator, payload original, revisiones HITL
+- Botón "Defender briefing" → recibe **3-5 pasos ejecutables** con justificación, vinculados al playbook del catálogo (rotación masiva, revisión de logs, notificación al CIRT)
+- Cada playbook tiene `effort_hours` y `cost_estimate_usd` para presupuestar la respuesta
+
+**Por qué le importa:** Spycloud cuesta USD 50k/año y está en inglés. NOMAD es gratis, en español, con playbooks adaptados a equipos pequeños.
+
+### 3. Periodista de investigación (narrativa generada + caso público)
+
+**Quién:** medios independientes (estilo Vector Crítico, Plaza Pública, Confidencial), bloggers de seguridad, OSINT enthusiasts.
+
+**Necesita:** timelines auditables de incidentes públicos + borradores narrativos en español con citas a fuentes, sin sensacionalismo.
+
+**Qué hace en NOMAD:**
+- Abre `/casos/digecam` — timeline con fechas, fuentes, ventana de detección temprana ("X meses de ventaja")
+- En `/events/[id]` de un evento publicado → click "Generar borrador narrativo"
+- El agente Narrative produce: título, body en 3-5 párrafos estilo informativo, key facts con fuentes citadas, sources cited
+- Borrador queda como "needs_review" — el periodista edita y publica con su firma
+
+**Por qué le importa:** investigar credenciales en mercados clandestinos requiere acceso a feeds OSINT pagos. NOMAD agrega la señal, la valida con HITL y entrega el contexto sin que el periodista tenga que tocar dumps reales.
+
+### 4. Revisor humano / Editor responsable (panel HITL)
+
+**Quién:** lead técnico, oficial de cumplimiento, periodista senior — alguien con autoridad para decidir qué se publica.
+
+**Necesita:** workflow rápido de aprobación/rechazo con auditabilidad.
+
+**Qué hace en NOMAD:**
+- Abre `/hitl` — lista de eventos `pending_review`
+- Click en un evento → ve resumen, severidad, trazas de Investigator (label: confirmed/strong_evidence/claimed)
+- Decide: **Aprobar** (evento pasa a `published`) o **Rechazar** (pasa a `dismissed`)
+- Cada decisión queda en `hitl_reviews` con reviewer + comentario + timestamp
+
+**Por qué le importa:** las decisiones de publicación sobre brechas gubernamentales son sensibles políticamente. HITL ético = trazabilidad legal + diferenciación frente a productos automatizados puros.
+
+---
+
+## Casos de uso concretos
+
+### Caso A — Alerta temprana de DIGECAM (abril 2026)
+
+**Situación real (documentada por Vector Crítico):** credenciales del personal de la Dirección General de Gestión del Catastro Nacional aparecieron en mercados clandestinos **7 meses antes** de la confirmación oficial del ataque.
+
+**Lo que NOMAD habría hecho:**
+1. **Make webhook** ingesta la señal OSINT (mercado de credenciales detectado por feed externo).
+2. **Triage** clasifica `severity: critical`, sector `defensa`.
+3. **Investigator** verifica contra fuentes OSINT internas, marca `hitl_required: true`, label: `strong_evidence`.
+4. **Revisor humano** en `/hitl` aprueba después de validar.
+5. **Defender** genera playbook: rotación masiva en 24h, revisión de logs 60 días, notificación al CIRT GT.
+6. **Narrative** genera borrador para que medios independientes publiquen el caso.
+7. **Ciudadano** afectado abre la app, ve su prefijo en la base, recibe recomendaciones.
+
+Ventana ganada para defensores: **7 meses**. Ver [`web/src/app/casos/digecam/page.tsx`](web/src/app/casos/digecam/page.tsx).
+
+### Caso B — Empleador en portal "Tu Empleo" (MINTRAB)
+
+**Situación:** patrón de reseteos sospechosos en cuentas de empleadores del portal del Ministerio de Trabajo.
+
+**Lo que NOMAD hace:**
+- Webhook recibe el reporte de logs anómalos.
+- Triage clasifica `severity: medium`.
+- Defender briefing prioriza notificación a empleadores afectados antes de rotación, dado que muchas empresas pequeñas no monitorean sus cuentas.
+- El playbook estima `effort_hours: 4`, `cost_estimate_usd: 200` (proporcional al tamaño).
+
+### Caso C — Verificación ciudadana k-anonymity
+
+**Situación:** funcionario de RENAP sospecha que su correo institucional pudo haber sido comprometido tras una actualización del sistema en mayo 2026.
+
+**Lo que NOMAD hace:**
+- Funcionario abre la app móvil.
+- Ingresa `juan.perez@renap.gob.gt` — el dispositivo calcula `sha1("juan.perez@renap.gob.gt")` = `a1b2c3d4e5...`.
+- Solo `a1b2c` (5 chars) va al servidor.
+- Servidor responde: "encontramos 1 coincidencia parcial" + playbook de rotación.
+- Si quiere más detalle, recibe recomendaciones específicas sin que su correo entero haya tocado ningún log.
+
+### Caso D — Periodista cubriendo crisis de ciberseguridad GT
+
+**Situación:** periodista de Vector Crítico quiere publicar análisis sobre el patrón abril-mayo 2026.
+
+**Lo que NOMAD hace:**
+- Periodista abre `/casos/digecam` — timeline pre-armada con fuentes públicas.
+- Para cada incidente, click en `/events/[id]` → "Generar borrador narrativo".
+- Recibe borrador en español con key facts y fuentes citadas (Vector Crítico, CIRT GT, etc).
+- Periodista edita, agrega análisis propio, publica.
+
+### Caso E — Investigación retrospectiva (académico)
+
+**Situación:** investigador de la USAC quiere estudiar la ventana de tiempo entre exposición OSINT y confirmación oficial en LATAM.
+
+**Lo que NOMAD hace:**
+- Investigador clona el repo (open source).
+- Accede a los datos sintéticos en `supabase/seed.sql` o conecta su propia instancia.
+- Corre `npm run eval:triage` para ver métricas del clasificador.
+- Usa el playground `/playground` para explorar la API y exportar dataset.
+
+---
+
 ## Equipo
 
-| Rol | Carpeta | Fase 0 |
-|-----|---------|--------|
-| Backend | `backend/` | API + seed + mock |
-| Frontend | `web/` | Lista instituciones |
-| Mobile | `mobile/` | Lista instituciones |
-| PM | `docs/` | Fases, demo, casos |
+| Rol | Carpeta | Entregables |
+|-----|---------|-------------|
+| Backend | `backend/` | API Fastify + 6 agentes + RAG (FTS + vector) + evals |
+| Frontend | `web/` | Dashboard, HITL panel, playground FTS-vs-vector, casos, eventos |
+| Mobile | `mobile/` | Lista instituciones + chequeo k-anonymity |
+| PM | `docs/` | Fases, demo, casos, diferenciador, deploy |
 
 ## Stack
 
@@ -73,7 +203,7 @@ flowchart LR
 ### 1. Clonar e instalar
 
 ```bash
-git clone <repo-url> HackIndies
+git clone https://github.com/shigerudev/HackIndies.git
 cd HackIndies
 npm run install:all
 ```
@@ -129,12 +259,21 @@ Fuente de verdad: [`shared/openapi.yaml`](shared/openapi.yaml) v0.1
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/api/health` | Estado + mock flag |
-| GET | `/api/institutions` | 8 instituciones |
+| GET | `/api/institutions` | Lista de instituciones |
 | GET | `/api/events` | Eventos (`?status=&severity=`) |
-| GET | `/api/events/:id` | Detalle + trazas |
-| POST | `/api/citizen/check` | `{ "hash_prefix": "a1b2c" }` |
+| GET | `/api/events/:id` | Detalle + trazas + revisiones HITL |
+| POST | `/api/citizen/check` | `{ "hash_prefix": "a1b2c" }` — k-anonymity |
 | GET | `/api/playbooks/:slug` | Playbook MD |
-| POST | `/api/agent/chat` | Chat mock (Fase 0) |
+| POST | `/api/playbooks/search` | `{ "query", "mode": "fts\|vector\|auto" }` |
+| POST | `/api/agent/route` | Router → Citizen \| Defender |
+| POST | `/api/agent/triage` | Clasifica severidad + sector |
+| POST | `/api/agent/investigate` | Verifica con fuentes OSINT |
+| POST | `/api/agent/defender` | Briefing técnico para SOC |
+| POST | `/api/agent/narrative` | Borrador narrativo (HITL) |
+| POST | `/api/agent/chat` | Chat ciudadano |
+| GET | `/api/hitl/pending` | Cola de eventos pending_review |
+| POST | `/api/hitl/:event_id/approve` | Aprobar → published |
+| POST | `/api/hitl/:event_id/reject` | Rechazar → dismissed |
 
 **Prefijos de prueba:** `a1b2c`, `d4e5f`, `f6a7b`
 
