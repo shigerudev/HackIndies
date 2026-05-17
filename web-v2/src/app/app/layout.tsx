@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers';
-import type { Role } from '@/lib/role';
-import { isValidRole, getRole, ROLE_META } from '@/lib/role';
+import { getRole } from '@/lib/role';
 import { RoleProvider } from '@/components/app/RoleProvider';
 import { Sidebar } from '@/components/app/Sidebar';
 import { Topbar } from '@/components/app/Topbar';

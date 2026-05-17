@@ -141,7 +141,7 @@ const ACCENT_DOT: Record<Kpi['accent'], string> = {
 }
 
 export default function SmartInsights() {
-  const { events } = useEvents({ pollMs: 30_000 })
+  const { events, error: eventsError } = useEvents({ pollMs: 30_000 })
   const { institutions } = useInstitutions()
   const { online } = useHealth()
   const kpis = buildKpis(events, institutions.length, online)
@@ -161,6 +161,9 @@ export default function SmartInsights() {
           Datos desde el backend,{' '}
           <span className="serif-accent text-white/50">sin rellenos inventados.</span>
         </h2>
+        {eventsError && (
+          <p className="mt-2 text-[12px] text-red-400/70">{eventsError} — reintentando en 30s</p>
+        )}
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">

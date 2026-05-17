@@ -155,7 +155,7 @@ function institutionBreakdown(events: ExposureEvent[]) {
 export default function AnalyticsOverview() {
   const [active, setActive] = useState<TabId>('volume')
   const [volumeView, setVolumeView] = useState<VolumeViewId>('bars_daily')
-  const { events, loading } = useEvents({ pollMs: 60_000 })
+  const { events, loading, error } = useEvents({ pollMs: 60_000 })
 
   const dailyBuckets = useMemo(() => bucketByDay(events), [events])
   const dailyStacked = useMemo(() => enrichDailyForStack(dailyBuckets), [dailyBuckets])
@@ -196,6 +196,9 @@ export default function AnalyticsOverview() {
           <p className="mt-3 text-[14px] text-white/45 leading-relaxed">
             {loading ? 'Cargando eventos…' : totalEvents === 0 ? 'Aún no hay eventos.' : `${totalEvents} eventos · ${totalCritical} críticos.`}
           </p>
+          {error && (
+            <p className="mt-2 text-[12px] text-red-400/70">{error} — reintentando en 60s</p>
+          )}
         </div>
 
         <div className="flex gap-1 bg-white/[0.04] rounded-xl p-1 border border-white/[0.07] self-start">

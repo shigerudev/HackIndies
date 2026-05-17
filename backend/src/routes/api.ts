@@ -21,23 +21,38 @@ function useMock(): boolean {
 }
 
 export async function registerApiRoutes(app: FastifyInstance) {
-  app.get('/api/health', async () => ({
-    status: 'ok',
-    supabase: hasSupabase(),
-    minimax: hasMiniMax(),
-    make_webhook: hasMakeWebhook(),
-    make_api: hasMakeApi(),
-    mock: useMock(),
-    version: '0.1.0',
-  }));
+  app.get('/api/health', async (req) => {
+    let supabaseOk = hasSupabase();
+    if (supabaseOk) {
+      try {
+        const sb = getSupabase()!;
+        const { error } = await sb.from('institutions').select('id').limit(1);
+        if (error) supabaseOk = false;
+      } catch {
+        supabaseOk = false;
+      }
+    }
+    return {
+      status: 'ok',
+      supabase: supabaseOk,
+      minimax: hasMiniMax(),
+      make_webhook: hasMakeWebhook(),
+      make_api: hasMakeApi(),
+      mock: useMock(),
+      version: '0.1.0',
+    };
+  });
 
-  app.get<{ Querystring: { status?: string; severity?: string } }>('/api/institutions', async () => {
+  app.get<{ Querystring: { status?: string; severity?: string } }>('/api/institutions', async (req) => {
     if (useMock()) {
       return { data: MOCK_INSTITUTIONS, mock: true };
     }
     const sb = getSupabase()!;
     const { data, error } = await sb.from('institutions').select('*').order('name');
-    if (error) throw error;
+    if (error) {
+      req.log.error({ err: error }, 'GET /api/institutions supabase error');
+      throw error;
+    }
     return { data: data as Institution[], mock: false };
   });
 
@@ -54,7 +69,10 @@ export async function registerApiRoutes(app: FastifyInstance) {
     if (status) q = q.eq('status', status);
     if (severity) q = q.eq('severity', severity);
     const { data, error } = await q;
-    if (error) throw error;
+    if (error) {
+      req.log.error({ err: error }, 'GET /api/events supabase error');
+      throw error;
+    }
     const mapped: ExposureEvent[] = (data ?? []).map((row) => ({
       id: row.id,
       title: row.title,
@@ -83,7 +101,10 @@ export async function registerApiRoutes(app: FastifyInstance) {
     }
     const sb = getSupabase()!;
     const { data: event, error } = await sb.from('v_events_detail').select('*').eq('id', id).single();
-    if (error || !event) return reply.status(404).send({ error: 'Not found' });
+    if (error || !event) {
+      if (error) req.log.error({ err: error }, 'GET /api/events/:id supabase error');
+      return reply.status(404).send({ error: 'Not found' });
+    }
     const { data: traces } = await sb.from('agent_traces').select('*').eq('event_id', id);
     const { data: reviews } = await sb.from('hitl_reviews').select('*').eq('event_id', id);
     return {

@@ -1,10 +1,8 @@
-import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ExternalLink, Github } from 'lucide-react'
 import { SidebarNav } from './SidebarNav'
 import type { Role } from '@/lib/roles-meta'
-import { ROLE_META } from '@/lib/roles-meta'
 
 type Props = { role: Role }
 

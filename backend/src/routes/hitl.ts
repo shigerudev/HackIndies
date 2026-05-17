@@ -43,7 +43,7 @@ export async function registerHitlRoutes(app: FastifyInstance) {
   });
 
   // GET /api/hitl/pending — list events needing review
-  app.get('/api/hitl/pending', async () => {
+  app.get('/api/hitl/pending', async (req) => {
     if (useMock()) {
       return { data: [], mock: true };
     }
@@ -53,7 +53,10 @@ export async function registerHitlRoutes(app: FastifyInstance) {
       .select('id, title, summary, severity, status, institution_name, institution_slug, first_seen_at')
       .eq('status', 'pending_review')
       .order('first_seen_at', { ascending: false });
-    if (error) throw error;
+    if (error) {
+      req.log.error({ err: error }, 'GET /api/hitl/pending supabase error');
+      throw error;
+    }
     return { data: data ?? [], mock: false };
   });
 

@@ -4,7 +4,6 @@ import { ChevronRight } from 'lucide-react'
 import { RoleSwitcher } from './RoleSwitcher'
 import { SystemStatusPill } from './SystemStatusPill'
 import type { Role } from '@/lib/roles-meta'
-import { ROLE_META } from '@/lib/roles-meta'
 
 type BreadcrumbItem = { label: string; href?: string }
 
