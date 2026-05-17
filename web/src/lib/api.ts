@@ -70,8 +70,9 @@ export async function runInvestigate(eventId: string, triage?: unknown) {
   return res.json();
 }
 
-export async function searchPlaybooks(q: string) {
-  const res = await fetch(`${API_URL}/api/playbooks/search?q=${encodeURIComponent(q)}`, {
+export async function searchPlaybooks(q: string, mode: 'fts' | 'vector' | 'auto' = 'auto') {
+  const modeParam = mode !== 'auto' ? `&mode=${mode}` : '';
+  const res = await fetch(`${API_URL}/api/playbooks/search?q=${encodeURIComponent(q)}${modeParam}`, {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`API ${res.status}`);
@@ -99,6 +100,16 @@ export async function rejectEvent(eventId: string, reviewer: string, comment?: s
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-hitl-token': process.env.NEXT_PUBLIC_HITL_TOKEN ?? '' },
     body: JSON.stringify({ reviewer, comment }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function generateNarrative(eventId: string) {
+  const res = await fetch(`${API_URL}/api/agent/narrative`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: eventId }),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();

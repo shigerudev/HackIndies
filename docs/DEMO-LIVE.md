@@ -59,6 +59,8 @@ Esperar a que aparezcan los resultados.
 
 **Acción:** scroll hasta la matriz comparativa para recordarlo.
 
+> "Y para los jueces técnicos — esto no es solo prompts. Tenemos un golden dataset de 10 eventos y evals automatizados que miden accuracy del agente Triage. El comando `npm run eval:triage` corre en menos de 30 segundos."
+
 ---
 
 ## 0:53 — El cierre (7s)

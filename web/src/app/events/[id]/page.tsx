@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { fetchEvent } from '@/lib/api';
 import { SeverityBadge } from '@/components/SeverityBadge';
 import { AgentActions } from '@/components/AgentActions';
+import { NarrativeDraft } from '@/components/NarrativeDraft';
 
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,6 +38,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
       <div className="mt-8 grid gap-6">
         <AgentActions eventId={event.id} />
+
+        <NarrativeDraft eventId={event.id} status={event.status} />
 
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase text-slate-400">Trazas de agentes</h2>

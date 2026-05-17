@@ -87,3 +87,49 @@ Para SSE real en prod, opciones (Fase 3):
 - Migrar `/api/agent/chat` a Vercel Edge Runtime (`runtime: 'edge'`) con `streamText().toTextStreamResponse()`.
 - Mover solo el chat a un endpoint Next.js dentro de `web/` con `runtime: 'edge'`.
 - Usar otro provider (Cloudflare Workers, Fly) para el chat.
+
+---
+
+## Deploy automatico via Vercel Git
+
+El proyecto usa **Vercel Git Integration**: cada push a `main` dispara un deploy automatico.
+
+| Proyecto | Carpeta | Git branch | Trigger |
+|---|---|---|---|
+| API | `backend/` | `main` | Push a `/backend` o merge de PR |
+| Web | `web/` | `main` | Push a `/web` o merge de PR |
+
+### Ver estado de deploy
+
+1. Dashboard Vercel → proyecto → **Deployments** tab.
+2. Badge de estado en README:
+
+```markdown
+[![CI](https://github.com/<org>/HackIndies/actions/workflows/ci.yml/badge.svg)](https://github.com/<org>/HackIndies/actions)
+[![Vercel](https://vercel-badge.dev/projects/<project-id>)](https://vercel.com/<org>/<project>)
+```
+
+### Variables de entorno en produccion
+
+| Variable | Donde | Proyecto |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Vercel web | `nomad-centinela-web` |
+| `NEXT_PUBLIC_HITL_TOKEN` | Vercel web | `nomad-centinela-web` |
+| `HITL_TOKEN` | Vercel api | `nomad-centinela-api` |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Vercel api | `nomad-centinela-api` |
+| `MINIMAX_API_KEY` | Vercel api | `nomad-centinela-api` |
+
+### GitHub Actions CI badge
+
+Una vez el workflow verde, agregar en README:
+
+```markdown
+![CI](https://github.com/<org>/HackIndies/actions/workflows/ci.yml/badge.svg)
+```
+
+Para obtener el badge SVG: GitHub repo → Actions → workflow `ci` → badge menu → copy markdown.
+
+### Roles por archivo
+
+- `.github/workflows/ci.yml` — corre en cada PR y push a main (lint + build).
+- `.github/workflows/eval.yml` — solo manual via `workflow_dispatch` (eval triage contra prod).

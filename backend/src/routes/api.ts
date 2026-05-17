@@ -256,13 +256,14 @@ export async function registerApiRoutes(app: FastifyInstance) {
     }
   });
 
-  app.get<{ Querystring: { q: string; limit?: string } }>('/api/playbooks/search', async (req, reply) => {
+  app.get<{ Querystring: { q: string; limit?: string; mode?: string } }>('/api/playbooks/search', async (req, reply) => {
     const q = req.query.q?.trim();
     if (!q) {
       return reply.status(400).send({ error: 'Query parameter q is required' });
     }
     const limit = Math.min(Number(req.query.limit ?? 5) || 5, 20);
-    const data = await searchPlaybooks(q, limit);
-    return { data, mock: useMock(), query: q };
+    const mode = (req.query.mode ?? 'auto') as 'fts' | 'vector' | 'auto';
+    const data = await searchPlaybooks(q, limit, mode);
+    return { data, mock: useMock(), query: q, mode };
   });
 }

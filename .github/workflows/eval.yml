@@ -1,0 +1,33 @@
+name: Eval Triage
+
+# Runs manually via workflow_dispatch — avoids burning MiniMax tokens on every PR
+on:
+  workflow_dispatch: {}
+
+jobs:
+  eval:
+    name: Eval Triage Agent
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and build
+        run: cd backend && npm ci && npm run build
+
+      - name: Run evals against production API
+        run: cd backend && npm run eval:triage -- --prod 2>&1 | tee ${{ github.workspace }}/eval-output.txt
+        env:
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+          API_URL: https://nomad-centinela-api.vercel.app
+
+      - name: Upload eval log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-output
+          path: backend/eval-output.txt
+          retention-days: 7

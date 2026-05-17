@@ -6,6 +6,7 @@ import { runInvestigator } from '../agents/investigator/index.js';
 import { InvestigatorInputSchema } from '../agents/investigator/schema.js';
 import { routeMessage } from '../agents/router/index.js';
 import { getDefenderBriefing } from '../agents/defender/index.js';
+import { runNarrative } from '../agents/narrative/index.js';
 import { findAgentTraces, deleteAgentTraces } from '../lib/agent-traces.js';
 import { hasSupabase, hasMiniMax } from '../lib/env.js';
 
@@ -27,6 +28,10 @@ const defenderSchema = z.object({
     event_id: z.string().uuid().optional(),
     severity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   }).optional(),
+});
+
+const narrativeSchema = z.object({
+  event_id: z.string().uuid(),
 });
 
 export async function registerAgentRoutes(app: FastifyInstance) {
@@ -186,6 +191,25 @@ export async function registerAgentRoutes(app: FastifyInstance) {
     } catch (err) {
       req.log.error(err, 'Defender briefing failed');
       return reply.status(502).send({ error: err instanceof Error ? err.message : 'Defender briefing failed' });
+    }
+  });
+
+  // POST /api/agent/narrative — generate narrative draft from a published event
+  app.post('/api/agent/narrative', async (req, reply) => {
+    const parsed = narrativeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.flatten() });
+    }
+    try {
+      const { event_id } = parsed.data;
+      const result = await runNarrative(event_id);
+      return result;
+    } catch (err) {
+      req.log.error(err, 'Narrative generation failed');
+      const msg = err instanceof Error ? err.message : 'Narrative failed';
+      if (msg.includes('not found')) return reply.status(404).send({ error: msg });
+      if (msg.includes("status is '")) return reply.status(400).send({ error: msg });
+      return reply.status(502).send({ error: msg });
     }
   });
 }

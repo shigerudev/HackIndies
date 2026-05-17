@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Section } from '@/components/playground/Section';
 import { EndpointCard } from '@/components/playground/EndpointCard';
 import { CodeBlock } from '@/components/playground/CodeBlock';
+import { FtsVsVector } from '@/components/playground/FtsVsVector';
 import {
   fetchHealth,
   fetchInstitutions,
@@ -691,6 +692,15 @@ const reply = messages[messages.length - 1].content;`,
           <div className="mt-4 p-4 rounded-xl border border-slate-700 bg-slate-950 text-sm text-slate-400">
             <strong className="text-white">Datos del seed:</strong> Todos los eventos en esta plataforma son sintéticos. Los dominios están ofuscados (ej. <code>renap[.]gob[.]gt</code>). No hay datos reales de brechas. El proyecto cumple con las reglas de seguridad del workspace.
           </div>
+        </Section>
+
+        {/* SECTION 5.5: FTS vs Vector comparison */}
+        <Section
+          title="FTS vs Vector — RAG semantico"
+          description="Dos modos de busqueda en playbooks: Full-Text Search (FTS) y busqueda vectorial (pgvector). Cambia el modo y observa la diferencia en los rankings."
+          badge="rag"
+        >
+          <FtsVsVector />
         </Section>
 
         {/* SECTION 6: COMPARISON MATRIX */}
