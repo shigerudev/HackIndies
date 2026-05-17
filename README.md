@@ -37,6 +37,8 @@ HIBP te dice si tu correo está expuesto — pero no ayuda al SOC del Estado. Sp
 
 **NOMAD es la primera plataforma open-source que une los cuatro mundos en español: ciudadano + defensor + periodista, con HITL ético explícito en cada decisión publicable.**
 
+![CI](https://github.com/<org>/HackIndies/actions/workflows/ci.yml/badge.svg)
+
 ```mermaid
 flowchart LR
   Web[Next.js] --> API[Node API]
@@ -139,13 +141,14 @@ Fuente de verdad: [`shared/openapi.yaml`](shared/openapi.yaml) v0.1
 ## Estructura del repo
 
 ```
-backend/     # API Node
-web/         # Dashboard Next.js
-mobile/      # App Flutter
-supabase/    # migrations + seed.sql
-shared/      # openapi.yaml + types
-docs/        # PHASES, DEMO-SCRIPT, CASES
-.cursor/     # rules + mcp.json
+backend/       # API Node + agentes (Triage, Investigator, Router, Defender, Citizen, Narrative)
+web/           # Dashboard Next.js (dashboard, playground, demo, hitl, casos)
+mobile/        # App Flutter (instituciones + chequeo k-anon)
+supabase/      # migrations + seed.sql
+shared/        # openapi.yaml + types
+docs/          # PHASES, DEMO-SCRIPT, CASES, DIFFERENTIATOR, DEPLOY-WEB
+.github/       # workflows (CI + eval on-demand)
+.cursor/       # rules + mcp.json
 ```
 
 Ver [`AGENTS.md`](AGENTS.md) para convenciones de agentes y comandos.
@@ -175,6 +178,12 @@ Configuración Supabase MCP: [`docs/MCP-SETUP.md`](docs/MCP-SETUP.md)
 | 1 | Agentes Triage/Investigator, RAG, UI | [`docs/PHASES.md`](docs/PHASES.md) |
 | 2 | Make, HITL, resto de agentes | idem |
 | 3 | Evals, deploy, pitch | [`docs/DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md) |
+
+## Documentación adicional
+
+- [`docs/DIFFERENTIATOR.md`](docs/DIFFERENTIATOR.md) — matriz comparativa, pitch de 30s, frases de respuesta a jurado
+- [`docs/DEMO-LIVE.md`](docs/DEMO-LIVE.md) — script narrativo de 60s para demo en vivo
+- [`docs/DEPLOY-WEB.md`](docs/DEPLOY-WEB.md) — deploy, CI, Vercel Git integration
 
 ## Licencia
 
