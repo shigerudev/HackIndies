@@ -1,17 +1,18 @@
-import type { ReactNode } from 'react';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
-import { RoleSwitcher } from './RoleSwitcher';
-import type { Role } from '@/lib/roles-meta';
-import { ROLE_META } from '@/lib/roles-meta';
+import type { ReactNode } from 'react'
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
+import { RoleSwitcher } from './RoleSwitcher'
+import { SystemStatusPill } from './SystemStatusPill'
+import type { Role } from '@/lib/roles-meta'
+import { ROLE_META } from '@/lib/roles-meta'
 
-type BreadcrumbItem = { label: string; href?: string };
+type BreadcrumbItem = { label: string; href?: string }
 
 type Props = {
-  role: Role;
-  breadcrumbs?: BreadcrumbItem[];
-  actions?: ReactNode;
-};
+  role: Role
+  breadcrumbs?: BreadcrumbItem[]
+  actions?: ReactNode
+}
 
 export function Topbar({ role, breadcrumbs = [], actions }: Props) {
   return (
@@ -33,9 +34,10 @@ export function Topbar({ role, breadcrumbs = [], actions }: Props) {
         ))}
       </div>
       <div className="app-topbar__actions">
+        <SystemStatusPill />
         <RoleSwitcher currentRole={role} />
         {actions}
       </div>
     </div>
-  );
+  )
 }

@@ -80,7 +80,10 @@ export async function searchPlaybooks(q: string, mode: 'fts' | 'vector' | 'auto'
 }
 
 export async function fetchHitlPending(): Promise<{ data: ExposureEvent[]; mock: boolean }> {
-  const res = await fetch(`${API_URL}/api/hitl/pending`, { cache: 'no-store' });
+  const res = await fetch(`${API_URL}/api/hitl/pending`, {
+    cache: 'no-store',
+    headers: { 'x-hitl-token': process.env.NEXT_PUBLIC_HITL_TOKEN ?? '' },
+  });
   if (!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }

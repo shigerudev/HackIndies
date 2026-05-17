@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { FloatingChatBubble } from '@/components/FloatingChatBubble';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -61,7 +62,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" dir="ltr" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <FloatingChatBubble />
+      </body>
     </html>
   );
 }

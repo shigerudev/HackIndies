@@ -5,7 +5,11 @@ import { API_URL } from '@/lib/api';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-export function CitizenChat() {
+interface CitizenChatProps {
+  fullHeight?: boolean;
+}
+
+export function CitizenChat({ fullHeight = false }: CitizenChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,10 +96,12 @@ export function CitizenChat() {
   }
 
   return (
-    <div className="flex h-[420px] flex-col rounded-lg border border-slate-700 bg-slate-900/50">
-      <div className="border-b border-slate-700 px-4 py-2 text-sm font-medium text-cyan-400">
-        Chat ciudadano
-      </div>
+    <div className={`flex flex-col ${fullHeight ? 'h-full' : 'rounded-lg border border-slate-700 bg-slate-900/50'}`}>
+      {!fullHeight && (
+        <div className="border-b border-slate-700 px-4 py-2 text-sm font-medium text-cyan-400">
+          Chat ciudadano
+        </div>
+      )}
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
           <p className="text-sm text-slate-500">

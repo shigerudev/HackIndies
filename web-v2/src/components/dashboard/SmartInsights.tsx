@@ -9,7 +9,7 @@ import type { ExposureEvent } from '@/lib/api'
 
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.05, delayChildren: 0.04 } },
+  show: { transition: { staggerChildren: 0.03, delayChildren: 0.02 } },
 }
 const item = {
   hidden: { opacity: 0, y: 10 },

@@ -1,17 +1,32 @@
-import WelcomeHero from '@/components/dashboard/WelcomeHero'
-import LivePipelineRunner from '@/components/dashboard/LivePipelineRunner'
-import SmartInsights from '@/components/dashboard/SmartInsights'
-import AnalyticsOverview from '@/components/charts/AnalyticsOverview'
-import HowItWorks from '@/components/dashboard/HowItWorks'
+import { fetchEvents } from '@/lib/api';
+import { Toolbar } from '@/components/ui/Toolbar';
+import SmartInsights from '@/components/dashboard/SmartInsights';
+import AnalyticsOverview from '@/components/charts/AnalyticsOverview';
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  let mock = false;
+
+  try {
+    const res = await fetchEvents();
+    mock = res.mock;
+  } catch {
+    mock = false;
+  }
+
   return (
     <>
-      <WelcomeHero />
-      <LivePipelineRunner />
+      <Toolbar
+        eyebrow="NOMAD security"
+        title="Resumen"
+        meta={mock ? 'Modo mock activo' : undefined}
+        actions={
+          mock ? (
+            <span className="tag amber">API mock</span>
+          ) : undefined
+        }
+      />
       <SmartInsights />
       <AnalyticsOverview />
-      <HowItWorks />
     </>
-  )
+  );
 }

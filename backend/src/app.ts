@@ -10,16 +10,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({ logger: process.env.VERCEL !== '1' });
 
   await app.register(cors, {
-    origin: (origin: string | undefined, req: { host: string }) => {
-      if (!origin) return true; // server-side requests
-      // Allow localhost on any port
-      try {
-        const url = new URL(origin);
-        return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-      } catch {
-        return false;
-      }
-    },
+    origin: [
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+      /^https:\/\/nomad-centinela-v2(-[a-z0-9]+)?\.vercel\.app$/,
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   });

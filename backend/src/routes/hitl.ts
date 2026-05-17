@@ -21,7 +21,17 @@ export async function registerHitlRoutes(app: FastifyInstance) {
   app.addHook('preHandler', async (req, reply) => {
     // Public routes — no auth ever needed
     const path = req.url.split('?')[0];
-    if (path === '/' || path.startsWith('/api/health') || path.startsWith('/api/institutions') || path.startsWith('/api/events') || path.startsWith('/api/dev')) return;
+    if (
+      path === '/' ||
+      path.startsWith('/api/health') ||
+      path.startsWith('/api/institutions') ||
+      path.startsWith('/api/events') ||
+      path.startsWith('/api/dev') ||
+      path.startsWith('/api/citizen') ||
+      path.startsWith('/api/playbooks') ||
+      path.startsWith('/api/agent') ||
+      path.startsWith('/api/webhooks')
+    ) return;
 
     // Allow mock/dev bypass for authenticated routes too
     if (useMock()) return;
