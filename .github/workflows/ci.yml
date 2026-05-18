@@ -37,15 +37,15 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: web-v2/package-lock.json
 
       - name: Install dependencies
-        run: cd web && npm ci
+        run: cd web-v2 && npm ci
 
       - name: Lint
-        run: cd web && npm run lint
+        run: cd web-v2 && npm run lint
 
       - name: Build
-        run: cd web && npm run build
+        run: cd web-v2 && npm run build
         env:
           NEXT_PUBLIC_API_URL: https://nomad-centinela-api.vercel.app

@@ -65,23 +65,24 @@ export async function registerApiRoutes(app: FastifyInstance) {
       return { data: list, mock: true };
     }
     const sb = getSupabase()!;
-    let q = sb.from('v_events_detail').select('*').order('first_seen_at', { ascending: false });
-    if (status) q = q.eq('status', status);
-    if (severity) q = q.eq('severity', severity);
-    const { data, error } = await q;
+    // Direct tables instead of v_events_detail view (avoids RLS/policy issues on the view)
+    let eq = sb.from('exposure_events').select('*, institutions(name, slug), actors(name)').order('first_seen_at', { ascending: false });
+    if (status) eq = eq.eq('status', status);
+    if (severity) eq = eq.eq('severity', severity);
+    const { data: rawEvents, error } = await eq;
     if (error) {
       req.log.error({ err: error }, 'GET /api/events supabase error');
-      throw error;
+      throw Object.assign(new Error(error.message), { statusCode: 502 });
     }
-    const mapped: ExposureEvent[] = (data ?? []).map((row) => ({
+    const mapped: ExposureEvent[] = (rawEvents ?? []).map((row: any) => ({
       id: row.id,
       title: row.title,
       summary: row.summary,
       severity: row.severity,
       status: row.status,
-      institution_slug: row.institution_slug,
-      institution_name: row.institution_name,
-      actor_name: row.actor_name,
+      institution_slug: row.institutions?.slug ?? '',
+      institution_name: row.institutions?.name ?? '',
+      actor_name: row.actors?.name ?? null,
       credentials_count: row.credentials_count,
       first_seen_at: row.first_seen_at,
     }));
@@ -100,7 +101,11 @@ export async function registerApiRoutes(app: FastifyInstance) {
       };
     }
     const sb = getSupabase()!;
-    const { data: event, error } = await sb.from('v_events_detail').select('*').eq('id', id).single();
+    const { data: event, error } = await sb
+      .from('exposure_events')
+      .select('*, institutions(name, slug), actors(name)')
+      .eq('id', id)
+      .single();
     if (error || !event) {
       if (error) req.log.error({ err: error }, 'GET /api/events/:id supabase error');
       return reply.status(404).send({ error: 'Not found' });
@@ -114,9 +119,9 @@ export async function registerApiRoutes(app: FastifyInstance) {
         summary: event.summary,
         severity: event.severity,
         status: event.status,
-        institution_slug: event.institution_slug,
-        institution_name: event.institution_name,
-        actor_name: event.actor_name,
+        institution_slug: (event as any).institutions?.slug ?? '',
+        institution_name: (event as any).institutions?.name ?? '',
+        actor_name: (event as any).actors?.name ?? null,
         credentials_count: event.credentials_count,
         first_seen_at: event.first_seen_at,
         payload: event.payload ?? {},
@@ -173,10 +178,14 @@ export async function registerApiRoutes(app: FastifyInstance) {
       };
     }
     const ids = alerts.map((a) => a.event_id).filter(Boolean);
-    const { data: events } = await sb.from('v_events_detail').select('id, title, institution_name').in('id', ids);
+    const { data: events } = await sb.from('exposure_events').select('id, title, institutions(name)').in('id', ids);
     return {
       exposed: true,
-      events: events ?? [],
+      events: (events ?? []).map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        institution_name: e.institutions?.name ?? '',
+      })),
       recommendations: [
         'Cambiá contraseñas de cuentas asociadas a ese correo.',
         'Activá 2FA en servicios críticos.',

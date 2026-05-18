@@ -1,6 +1,7 @@
 {
   "framework": "nextjs",
-  "installCommand": "npm install && npm install --prefix web",
-  "buildCommand": "npm run build --prefix web",
-  "outputDirectory": "web/.next"
+  "installCommand": "npm install --prefix web-v2",
+  "buildCommand": "npm run build --prefix web-v2",
+  "outputDirectory": "web-v2/.next",
+  "publicEnvironment": ["NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_HITL_TOKEN"]
 }
