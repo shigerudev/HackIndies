@@ -125,10 +125,53 @@ export function CitizenChat({ variant = 'standalone' }: CitizenChatProps) {
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-0">
         {messages.length === 0 && (
-          <p className={cn('text-[13px]', dash ? 'text-white/38' : 'text-slate-500')}>
-            Pregunta qué hacer si tu correo pudo aparecer en una brecha o cómo endurecer cuentas. No compartimos
-            contraseñas ni datos privados aquí.
-          </p>
+          <div className="space-y-4">
+            <p className={cn('text-[13px] leading-relaxed', dash ? 'text-white/50' : 'text-slate-400')}>
+              Soy el asistente de seguridad de NOMAD. Puedo ayudarte con:
+            </p>
+            <ul className={cn('space-y-1.5 text-[12px] leading-relaxed', dash ? 'text-white/38' : 'text-slate-500')}>
+              <li className="flex gap-2">
+                <span className={cn(dash ? 'text-white/25' : 'text-slate-600')}>•</span>
+                <span>Pasos concretos si tu correo o cuenta institucional aparece en una filtración.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className={cn(dash ? 'text-white/25' : 'text-slate-600')}>•</span>
+                <span>Cómo crear contraseñas fuertes y cuándo cambiarlas.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className={cn(dash ? 'text-white/25' : 'text-slate-600')}>•</span>
+                <span>Qué es la autenticación de dos factores (2FA) y cómo activarla.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className={cn(dash ? 'text-white/25' : 'text-slate-600')}>•</span>
+                <span>Buenas prácticas para proteger cuentas de correo y redes sociales.</span>
+              </li>
+            </ul>
+            <p className={cn('text-[11px]', dash ? 'text-white/25' : 'text-slate-600')}>
+              No ingreses contraseñas ni datos privados — solo preguntas generales.
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {[
+                '¿Qué hago si mi correo apareció en una brecha?',
+                '¿Cómo activo el 2FA?',
+                '¿Cómo creo una contraseña segura?',
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setInput(suggestion)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-[11px] transition-colors text-left',
+                    dash
+                      ? 'border border-white/[0.1] bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/70'
+                      : 'border border-slate-700 bg-slate-800/60 text-slate-400 hover:bg-slate-700/60 hover:text-slate-200',
+                  )}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {messages.map((m, i) => (
           <div

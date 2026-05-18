@@ -150,15 +150,12 @@ export function Audiences() {
                 <p className="what">{what}</p>
                 <p className="why">{why}</p>
                 <div style={{ marginTop: 14 }}>
-                  <form action={async () => {
-                  'use server';
-                  await setRoleFromQuery(new FormData());
-                }}>
-                  <input type="hidden" name="as" value={role} />
-                  <button type="submit" className="btn btn-secondary btn-sm">
-                    Entrar como {ROLE_META[role].label}
-                  </button>
-                </form>
+                  <form action={setRoleFromQuery}>
+                    <input type="hidden" name="as" value={role} />
+                    <button type="submit" className="btn btn-secondary btn-sm">
+                      Entrar como {ROLE_META[role].label}
+                    </button>
+                  </form>
                 </div>
               </div>
             </Card>

@@ -152,7 +152,7 @@ export default function LivePipelineRunner() {
           <span className="serif-accent text-white/50">y mirá las stats actualizarse.</span>
         </h2>
         <p className="text-[13px] text-white/35">
-          Elige DIGECAM, Mintrab u otro preset. El pipeline corre Triage + Investigator + HITL.
+          Elige un preset. El pipeline corre Triage + Investigator + HITL.
           Al terminar, los gráficos del dashboard se refrescan al instante.
         </p>
       </motion.div>

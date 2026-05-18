@@ -8,6 +8,7 @@ import { CaseDigecam } from '@/components/landing/CaseDigecam';
 import { Comparison } from '@/components/landing/Comparison';
 import { Ethics } from '@/components/landing/Ethics';
 import { OpenSource } from '@/components/landing/OpenSource';
+import { MobileDownload } from '@/components/landing/MobileDownload';
 import { FinalCta } from '@/components/landing/FinalCta';
 import { Footer } from '@/components/landing/Footer';
 
@@ -24,6 +25,7 @@ export default function LandingPage() {
         <Solution />
         <Architecture />
         <Audiences />
+        <MobileDownload />
         <CaseDigecam />
         <Comparison />
         <Ethics />

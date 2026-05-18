@@ -19,6 +19,10 @@ const SITE_URL = 'https://nomad-centinela.example';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
   title:
     'NOMAD Centinela — Alerta temprana de credenciales para instituciones públicas LATAM',
   description:

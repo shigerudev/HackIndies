@@ -661,6 +661,23 @@ html, body {
 .stack-strip { display: flex; flex-wrap: wrap; gap: 10px; padding: 24px; border-radius: 14px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); box-shadow: var(--inner-line); }
 .stack-chip { font-family: var(--font-jetbrains), monospace; font-size: 12px; padding: 5px 11px; border-radius: 999px; background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--fg-secondary); }
 
+/* ===== Mobile Download ===== */
+.mobile-dl__grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; margin-top: 40px; }
+@media (min-width: 768px) { .mobile-dl__grid { grid-template-columns: 1fr 320px; } }
+.mobile-dl__features { display: flex; flex-direction: column; gap: 24px; }
+.mobile-dl__feature { display: flex; align-items: flex-start; gap: 16px; }
+.mobile-dl__icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.15); display: flex; align-items: center; justify-content: center; color: var(--brand-cyan); }
+.mobile-dl__feat-title { font-size: 14px; font-weight: 600; color: var(--fg-primary); margin: 0 0 4px; }
+.mobile-dl__feat-desc { font-size: 13px; color: var(--fg-muted); margin: 0; line-height: 1.6; }
+.mobile-dl__actions { position: sticky; top: 80px; }
+.mobile-dl__card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-md); }
+.mobile-dl__card-head { display: flex; align-items: center; gap: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle); }
+.mobile-dl__phone-icon { color: var(--brand-cyan); flex-shrink: 0; }
+.mobile-dl__app-name { font-size: 15px; font-weight: 600; color: var(--fg-primary); margin: 0 0 2px; }
+.mobile-dl__app-meta { font-size: 11px; color: var(--fg-muted); margin: 0; font-family: var(--font-jetbrains), monospace; }
+.mobile-dl__btn { width: 100%; justify-content: center; gap: 8px; }
+.mobile-dl__note { font-size: 11px; color: var(--fg-muted); line-height: 1.6; margin: 4px 0 0; text-align: center; }
+
 /* ===== Final CTA ===== */
 .cta-final { position: relative; overflow: hidden; }
 .cta-final::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(34, 211, 238, 0.10), transparent 70%); pointer-events: none; }

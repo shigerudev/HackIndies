@@ -194,8 +194,7 @@ export default function SmartInsights() {
       <motion.div variants={item} className="mb-9 max-w-2xl">
         <p className="eyebrow">Resumen</p>
         <h2 className="text-[26px] font-semibold tracking-tight text-white leading-tight">
-          Datos desde el backend,{' '}
-          <span className="serif-accent text-white/50">sin rellenos inventados.</span>
+          Datos desde el backend.
         </h2>
       </motion.div>
 

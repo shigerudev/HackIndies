@@ -6,7 +6,7 @@ export const ROLE_META: Record<Role, { label: string; desc: string; defaultRoute
   defensor: {
     label: 'Defensor',
     desc: 'SOC institucional, equipo de seguridad',
-    defaultRoute: '/app/eventos',
+    defaultRoute: '/app/dashboard',
   },
   revisor: {
     label: 'Revisor HITL',

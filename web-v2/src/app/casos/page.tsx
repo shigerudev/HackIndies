@@ -38,7 +38,10 @@ export default function CasosIndexPage() {
   return (
     <div className="page-content">
       <header className="page-header">
-        <Link href="/" className="back-link">← Landing</Link>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Link href="/" className="back-link">← Landing</Link>
+          <Link href="/app/dashboard" className="back-link">← Dashboard</Link>
+        </div>
         <h1>Casos públicos</h1>
         <p>Investigaciones de ciberseguridad Guatemala 2026, documentadas por NOMAD Centinela.</p>
       </header>
