@@ -1,7 +1,5 @@
-const API_URL =
-  typeof window !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
-    : 'http://localhost:3001';
+const PROD_API_URL = 'https://nomad-centinela-api-shigerudev.vercel.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? PROD_API_URL;
 
 export interface DemoPreset {
   id: string;

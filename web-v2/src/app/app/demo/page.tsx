@@ -290,10 +290,7 @@ export default function DemoPage() {
 
         {/* Hint */}
         <div style={{ textAlign: 'center', marginTop: 32, fontSize: 13, color: 'var(--fg-muted)' }}>
-          Para ver este demo funcionando, necesitas el backend corriendo en{' '}
-          <code className="code-inline">http://localhost:3001</code>
-          {' '}con los presets configurados.
-          <br />
+          Demo conectado al backend de producción.{' '}
           <a
             href="/app/playground"
             style={{ color: 'var(--brand-cyan)', textDecoration: 'none', marginTop: 8, display: 'inline-block' }}
