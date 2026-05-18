@@ -1,48 +1,103 @@
 import { DIGECAM_TIMELINE, DIGECAM_STATS } from '@/lib/digecam-data';
 import Link from 'next/link';
 
+const TYPE_CONFIG = {
+  osint: {
+    dotColor: 'var(--sev-medium)',
+    lineColor: 'rgba(127,177,196,0.35)',
+    label: 'OSINT',
+    pillClass: 'pill-sev pill-sev-medium',
+    dateColor: 'var(--sev-medium)',
+    borderAccent: 'rgba(127,177,196,0.18)',
+  },
+  public_report: {
+    dotColor: 'var(--sev-high)',
+    lineColor: 'rgba(212,164,90,0.35)',
+    label: 'Reporte público',
+    pillClass: 'pill-sev pill-sev-high',
+    dateColor: 'var(--sev-high)',
+    borderAccent: 'rgba(212,164,90,0.18)',
+  },
+  remediation: {
+    dotColor: 'var(--status-ok)',
+    lineColor: 'rgba(110,193,138,0.35)',
+    label: 'Remediación',
+    pillClass: 'pill-status pill-status-published',
+    dateColor: 'var(--status-ok)',
+    borderAccent: 'rgba(110,193,138,0.18)',
+  },
+};
+
 function TimelineItem({
   item,
   index,
+  isLast,
 }: {
   item: (typeof DIGECAM_TIMELINE)[0];
   index: number;
+  isLast: boolean;
 }) {
-  const typeColors: Record<string, string> = {
-    osint: 'border-cyan-500 bg-cyan-950/30',
-    public_report: 'border-amber-500 bg-amber-950/30',
-    remediation: 'border-emerald-500 bg-emerald-950/30',
-  };
+  const cfg = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.osint;
 
   return (
-    <div className="flex gap-4">
-      {/* Timeline dot + line */}
-      <div className="flex flex-col items-center">
-        <div className={`w-4 h-4 rounded-full mt-1 border-2 ${typeColors[item.type] ?? 'border-slate-600 bg-slate-800'}`} />
-        {index < DIGECAM_TIMELINE.length - 1 && (
-          <div className="w-0.5 flex-1 bg-slate-800 my-1" />
+    <div className="flex gap-5">
+      {/* Spine */}
+      <div className="flex flex-col items-center" style={{ minWidth: 20 }}>
+        <div
+          className="w-3 h-3 rounded-full mt-1.5 flex-shrink-0"
+          style={{ background: cfg.dotColor, boxShadow: `0 0 0 3px ${cfg.borderAccent}` }}
+        />
+        {!isLast && (
+          <div className="w-px flex-1 my-2" style={{ background: cfg.lineColor }} />
         )}
       </div>
 
-      {/* Content */}
-      <div className={`flex-1 mb-6 rounded border p-4 ${typeColors[item.type] ?? 'border-slate-700'}`}>
-        <div className="flex items-start justify-between gap-2 flex-wrap">
-          <span className="text-xs font-mono text-slate-400">{item.date}</span>
-          <span className="text-xs font-mono bg-slate-800 text-slate-400 px-2 py-0.5 rounded uppercase">{item.type}</span>
+      {/* Card */}
+      <div
+        className="flex-1 mb-6 panel"
+        style={{ borderColor: cfg.borderAccent, background: 'rgba(255,255,255,0.025)' }}
+      >
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+          <span
+            className="text-xs font-mono font-semibold"
+            style={{ color: cfg.dateColor, letterSpacing: '0.04em' }}
+          >
+            {item.date}
+          </span>
+          <span className={cfg.pillClass}>{cfg.label}</span>
         </div>
-        <p className="text-sm text-white font-medium mt-1">{item.signal}</p>
-        <p className="text-xs text-slate-400 mt-1">{item.note}</p>
-        <div className="mt-3 pt-3 border-t border-slate-800">
-          <p className="text-xs text-cyan-400">
-            <span className="font-mono text-cyan-600">→ </span>
+
+        <p
+          className="font-semibold mb-1"
+          style={{ fontSize: 14, color: 'rgba(255,255,255,0.92)', lineHeight: 1.45 }}
+        >
+          {item.signal}
+        </p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.42)', lineHeight: 1.55 }}>
+          {item.note}
+        </p>
+
+        <div
+          className="mt-3 pt-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p style={{ fontSize: 12, color: 'var(--sev-medium)', lineHeight: 1.55 }}>
+            <span style={{ opacity: 0.5 }}>→ </span>
             {item.nomadAction}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
-            <span className="font-mono text-slate-600">agente: </span>
-            <span className="text-slate-400">{item.agent}</span>
-            <span className="mx-2">·</span>
-            <span className="font-mono text-slate-600">fuente: </span>
-            <span className="text-slate-400">{item.source}</span>
+          <p
+            className="mt-1 flex flex-wrap gap-x-3"
+            style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}
+          >
+            <span>
+              <span style={{ color: 'rgba(255,255,255,0.22)' }}>agente: </span>
+              <span style={{ color: 'rgba(255,255,255,0.55)' }}>{item.agent}</span>
+            </span>
+            <span aria-hidden>·</span>
+            <span>
+              <span style={{ color: 'rgba(255,255,255,0.22)' }}>fuente: </span>
+              <span style={{ color: 'rgba(255,255,255,0.55)' }}>{item.source}</span>
+            </span>
           </p>
         </div>
       </div>
@@ -52,67 +107,93 @@ function TimelineItem({
 
 export default function CasosDigecamPage() {
   return (
-    <div className="min-h-screen bg-[#0a0f1a] text-slate-100">
+    <div
+      className="min-h-screen"
+      style={{ background: '#0a0a0a', color: 'rgba(255,255,255,0.87)' }}
+    >
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950">
-        <div className="max-w-3xl mx-auto px-6 py-10">
-          <p className="text-xs font-mono text-cyan-400 uppercase tracking-widest mb-3">
-            <Link href="/playground" className="hover:text-cyan-300 transition-colors">← Playground</Link>
+      <header style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 36px' }}>
+          <p className="mb-4" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
+            <Link href="/playground" className="hover:text-white/65 transition-colors" style={{ color: 'inherit', textDecoration: 'none' }}>
+              ← Casos
+            </Link>
+            <span className="ml-3 px-2 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 10 }}>Caso público</span>
           </p>
-          <h1 className="text-3xl font-black text-white mb-2">Caso DIGECAM</h1>
-          <p className="text-slate-400">
-            Línea de tiempo basada en reportes públicos de Vector Crítico (abril–mayo 2026).
-            Datos agregados; sin credenciales ni PII.
+
+          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.022em', lineHeight: 1.1, color: 'rgba(255,255,255,0.95)', marginBottom: 10 }}>
+            Caso DIGECAM
+          </h1>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.48)', lineHeight: 1.6 }}>
+            Dirección General de Gestión del Catastro Nacional
           </p>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10">
+      <main style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
 
-        {/* Hero stats */}
-        <section className="grid grid-cols-3 gap-4 mb-10">
-          <div className="col-span-3 md:col-span-1 bg-slate-900 border border-slate-700 rounded p-4 text-center">
-            <div className="text-5xl font-black text-cyan-400 mb-1">{DIGECAM_STATS.monthsOfAdvantage}</div>
-            <div className="text-xs text-slate-400 uppercase tracking-widest">meses de ventaja</div>
-            <div className="text-xs text-slate-500 mt-1">para defensores</div>
+        {/* KPI stats */}
+        <section className="grid grid-cols-3 gap-3 mb-10">
+          <div className="kpi text-center" style={{ alignItems: 'center' }}>
+            <div className="kpi-value" style={{ fontSize: 36, color: 'var(--sev-medium)' }}>
+              {DIGECAM_STATS.monthsOfAdvantage}
+            </div>
+            <div className="kpi-label">meses de ventaja</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>para defensores</div>
           </div>
-          <div className="col-span-3 md:col-span-1 bg-slate-900 border border-slate-700 rounded p-4 text-center">
-            <div className="text-5xl font-black text-amber-400 mb-1">{DIGECAM_STATS.credentialsExposed.toLocaleString()}</div>
-            <div className="text-xs text-slate-400 uppercase tracking-widest">credenciales</div>
-            <div className="text-xs text-slate-500 mt-1">expuestas públicamente</div>
+          <div className="kpi text-center" style={{ alignItems: 'center' }}>
+            <div className="kpi-value" style={{ fontSize: 36, color: 'var(--sev-high)' }}>
+              {DIGECAM_STATS.credentialsExposed.toLocaleString()}
+            </div>
+            <div className="kpi-label">credenciales</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>expuestas públicamente</div>
           </div>
-          <div className="col-span-3 md:col-span-1 bg-slate-900 border border-slate-700 rounded p-4 text-center">
-            <div className="text-5xl font-black text-red-400 mb-1">{DIGECAM_STATS.daysBetweenSignalAndConfirmation}</div>
-            <div className="text-xs text-slate-400 uppercase tracking-widest">días</div>
-            <div className="text-xs text-slate-500 mt-1">entre primera señal y confirmación</div>
+          <div className="kpi text-center" style={{ alignItems: 'center' }}>
+            <div className="kpi-value" style={{ fontSize: 36, color: 'var(--sev-critical)' }}>
+              {DIGECAM_STATS.daysBetweenSignalAndConfirmation}
+            </div>
+            <div className="kpi-label">días</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>entre primera señal y confirmación</div>
           </div>
         </section>
 
         {/* Context */}
-        <section className="mb-10 p-4 rounded border border-amber-800 bg-amber-950/30">
-          <p className="text-sm text-amber-200 leading-relaxed">
-            <strong className="text-amber-100">Contexto:</strong> entre abril y mayo de 2026, Guatemala sufrió una oleada de ciberataques a instituciones del Estado (DIGECAM, MINTRAB, MSPAS, MINEDUC, entre otras). La investigación de Vector Crítico documentó un{' '}
-            <strong className="text-amber-100">patrón recurrente</strong>: credenciales de empleados aparecían en mercados clandestinos{' '}
+        <section
+          className="mb-10 panel"
+          style={{ borderColor: 'rgba(212,164,90,0.2)', background: 'rgba(212,164,90,0.04)' }}
+        >
+          <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.7 }}>
+            <strong style={{ color: 'rgba(255,255,255,0.88)', fontWeight: 600 }}>Contexto:</strong>{' '}
+            entre abril y mayo de 2026, Guatemala sufrió una oleada de ciberataques a instituciones del Estado
+            (DIGECAM, MINTRAB, MSPAS, MINEDUC, entre otras). La investigación de Vector Crítico documentó un{' '}
+            <strong style={{ color: 'rgba(255,255,255,0.88)', fontWeight: 600 }}>patrón recurrente</strong>:{' '}
+            credenciales de empleados aparecían en mercados clandestinos{' '}
             <em>meses antes</em> del ataque público — sin que el Estado tuviese alerta temprana.
           </p>
         </section>
 
         {/* Timeline */}
         <section>
-          <h2 className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-6">
-            Qué habría detectado NOMAD Centinela
-          </h2>
+          <p className="eyebrow mb-6">Qué habría detectado NOMAD Centinela</p>
           <div>
             {DIGECAM_TIMELINE.map((item, i) => (
-              <TimelineItem key={i} item={item} index={i} />
+              <TimelineItem
+                key={i}
+                item={item}
+                index={i}
+                isLast={i === DIGECAM_TIMELINE.length - 1}
+              />
             ))}
           </div>
         </section>
 
         {/* Key takeaway */}
-        <section className="mt-8 p-6 rounded border border-cyan-800 bg-cyan-950/30">
-          <p className="text-lg text-cyan-100 leading-relaxed">
-            <strong className="text-cyan-200">
+        <section
+          className="mt-4 panel"
+          style={{ borderColor: 'rgba(127,177,196,0.2)', background: 'rgba(127,177,196,0.04)' }}
+        >
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.82)', lineHeight: 1.7 }}>
+            <strong style={{ color: 'rgba(255,255,255,0.95)', fontWeight: 600 }}>
               Si NOMAD Centinela hubiera estado operando en septiembre 2025:
             </strong>{' '}
             la primera señal OSINT habría triggered una alerta a los equipos defensores ~7 meses antes
@@ -121,32 +202,34 @@ export default function CasosDigecamPage() {
           </p>
         </section>
 
-        {/* Disclaimer */}
-        <footer className="mt-10 pt-6 border-t border-slate-800">
-          <p className="text-xs text-slate-600 leading-relaxed">
+        {/* Disclaimer + links */}
+        <footer
+          className="mt-10 pt-6"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', lineHeight: 1.7 }}>
             Datos de demostración sintéticos basados en reportes públicos de Vector Crítico (
             <a
               href={DIGECAM_STATS.vectorCriticoReference}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-slate-500 hover:text-slate-300 transition-colors underline"
+              style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'underline', transition: 'color 0.2s' }}
             >
               enlace público
             </a>
             ). NOMAD Centinela no rehospeda credenciales ni PII; las cifras aquí citadas son
-            agregadas y de dominio público. El nombre &ldquo;GordonFreeman&rdquo; es una etiqueta
-            usada en reportes OSINT públicos, no datos personales.
+            agregadas y de dominio público.
           </p>
-          <div className="mt-4 flex gap-4">
+          <div className="mt-5 flex gap-5 flex-wrap">
             <Link
               href="/playground"
-              className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+              style={{ fontSize: 13, color: 'var(--sev-medium)', textDecoration: 'none', transition: 'opacity 0.2s' }}
             >
               ← Probar la API en el playground
             </Link>
             <Link
               href="/demo"
-              className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+              style={{ fontSize: 13, color: 'rgba(180,130,220,0.85)', textDecoration: 'none', transition: 'opacity 0.2s' }}
             >
               ← Ver el demo en vivo
             </Link>
