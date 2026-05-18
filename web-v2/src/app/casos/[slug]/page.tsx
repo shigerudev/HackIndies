@@ -94,10 +94,6 @@ export default async function CasoSlugPage({ params }: Props) {
           )}
           ). NOMAD Centinela no rehospeda credenciales ni PII; las cifras aquí citadas son agregadas y de dominio público.
         </p>
-        <div className="case-footer__links">
-          <Link href="/app/playground">← Probar la API en el playground</Link>
-          <Link href="/app/demo">← Ver el demo en vivo</Link>
-        </div>
       </footer>
     </div>
   );
